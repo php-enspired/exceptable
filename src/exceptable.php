@@ -1,0 +1,193 @@
+<?php
+/**
+ * @package    at.exceptable
+ * @author     Adrian <adrian@enspi.red>
+ * @copyright  2014 - 2016
+ * @license    GPL-3.0 (only)
+ *
+ *  This program is free software: you can redistribute it and/or modify it
+ *  under the terms of the GNU General Public License, version 3.
+ *  The right to apply the terms of later versions of the GPL is RESERVED.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *  See the GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with this program.
+ *  If not, see <http://www.gnu.org/licenses/gpl-3.0.txt>.
+ */
+declare(strict_types = 1);
+
+namespace at\exceptable;
+
+use at\exceptable\api\Exceptable as ExceptableAPI;
+use at\util\JSON;
+
+/**
+ * base implementation for Exceptable interface.
+ */
+trait exceptable {
+
+  /**
+   * @const array INFO {
+   *    @type array ${$code} {
+   *      @type string $message   the exception message
+   *      @type int    $severity  the exception severity (one of the E_* constants)
+   *      @type array  $tr {
+   *        @type string $0    a translatable exception message with {}-delimited placeholders
+   *        @type string $...  default translation values, indexed by placeholder
+   *      }
+   *      @type mixed  $...       implementation-specific additional info
+   *    }
+   *    ...
+   *  }
+   */
+
+  /**
+   * @type int    $_code      the exception code
+   * @type string $_message   the exception message
+   * @type int    $_severity  the exception severity
+   * @type array  $_context   additional exception context
+   */
+  protected $_code = ExceptableAPI::DEFAULT_CODE;
+  protected $_message;
+  protected $_severity = E_ERROR;
+  protected $_context = [];
+
+  /** @see Exceptable::get_info() */
+  public static function get_info(int $code) : array {
+    if (! static::has_info($code)) {
+      $m = "no exception code [{$code}] is known";
+      throw new \UnderflowException($m, E_USER_WARNING);
+    }
+
+    return static::INFO[$code] + [
+      'code' => $code,
+      'severity' => E_ERROR
+    ];
+  }
+
+  /** @see Exceptable::has_info() */
+  public static function has_info(int $code) : bool {
+    return isset(static::INFO[$code]['message']);
+  }
+
+  /** @see Exceptable::__construct() */
+  public function __construct(...$args) {
+    if (is_array(end($args))) {
+      $this->_context = array_pop($args);
+    }
+    $previous = (end($args) instanceof \Throwable) ? array_pop($args) : null;
+    if (is_int(end($args)) && static::has_info(end($args))) {
+      $this->_code = array_pop($args);
+    }
+    $this->_message = is_string(end($args)) ?
+      array_pop($args) :
+      $this->_makeMessage();
+    $this->_severity = $this->_makeSeverity();
+
+    // bad args: an exceptional exception.
+    // what we could parse from the args becomes the new previous exception.
+    if (! empty($args)) {
+      $previous = new static($this->_message, $this->_code, $previous, $this->_context);
+      $message = "arguments passed to Exceptable::__construct are invalid and/or out of order:\n"
+        . JSON::encode($args, [JSON::PRETTY]);
+      throw new \RuntimeException($message, E_ERROR, $previous);
+    }
+
+    parent::__construct($this->_message, $this->_code, $previous);
+  }
+
+  /** @see Exceptable::getContext() */
+  public function getContext() : array {
+    return $this->_context;
+  }
+
+  /** @see Exceptable::getDebugMessage() */
+  public function getDebugMessage() : string {
+    return "{$this->__toString()}\ncontext: " . JSON::encode($this->getContext(), [JSON::PRETTY]);
+  }
+
+  /** @see Exceptable::getRoot() */
+  public function getRoot() : \Throwable {
+    $root = $this;
+    while ($root->getPrevious() !== null) {
+      $root = $root->getPrevious();
+    }
+    return $root;
+  }
+
+  /** @see Exceptable::getSeverity() */
+  public function getSeverity() : int {
+    return $this->_severity;
+  }
+
+  /** @see JsonSerializable::jsonSerialize() */
+  public function jsonSerialize() {
+    return [
+      'type' => static::class,
+      'code' => $this->getCode(),
+      'message' => $this->getMessage(),
+      'severity' => $this->getSeverity(),
+      'context' => $this->getContext()
+    ];
+  }
+
+  /**
+   * generates a default exception severity from context.
+   *
+   * a severity must be one of E_ERROR|E_WARNING|E_NOTICE|E_DEPRECATED.
+   * if no (valid) severity provided, falls back on:
+   *  - severity from exception info
+   *  - severity from previous exception
+   *  - E_ERROR
+   *
+   * @return int  an exception severity
+   */
+  protected function _makeSeverity() {
+    $severity = $this->_context['severity'] ??
+      static::get_info($this->_code)['severity'] ??
+      E_ERROR;
+
+    return in_array($severity, [E_ERROR, E_WARNING, E_NOTICE, E_DEPRECATED]) ?
+      $severity :
+      E_ERROR;
+  }
+
+  /**
+   * generates a default exception message from context.
+   *
+   * @return string  an exception message
+   */
+  protected function _makeMessage() : string {
+    return $this->_makeTrMessage() ??
+      static::get_info($this->_code)['message'] ??
+      static::get_info(ExceptableAPI::DEFAULT_CODE)['message'] ??
+      ExceptableAPI::DEFAULT_MESSAGE;
+  }
+
+  /**
+   * generates a translated default exception message from context.
+   *
+   * @return string|null  a translated exception message on success; null otherwise
+   */
+  protected function _makeTrMessage() {
+    $info = static::get_info($this->_code)['tr'] ?? null;
+    if (! $info) {
+      return null;
+    }
+
+    $message = array_unshift($info);
+    $context = $this->_context;
+    $replacements = [];
+    foreach ($info as $placeholder => $default) {
+      $replacement = $context[$placeholder] ?? $default;
+      if ($replacement === null) {
+        return null;
+      }
+      $replacements["{{$placeholder}}"] = $replacement;
+    }
+
+    return strtr($message, $replacements);
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "name": "php-enspired/exceptable",
+  "description": "Augmented features for exceptions and exception handling.",
+  "type": "library",
+  "homepage": "http://php.enspi.red",
+  "license": "GPL-3.0 (only)",
+  "authors": [
+    {
+      "name": "Adrian",
+      "email": "adrian@enspi.red",
+      "homepage": "http://enspi.red"
+    }
+  ],
+  "support": {
+    "irc": "irc://irc.freenode.net/php-enspired"
+  },
+  "require": {
+    "php": "^7.0",
+    "php-enspired/util": "*"
+  },
+  "require-dev": {},
+  "autoload": {
+    "psr-4": {
+      "at\\exceptable\\": "src/"
+    }
+  },
+  "autoload-dev": {}
+}
