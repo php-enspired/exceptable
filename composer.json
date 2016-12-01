@@ -18,11 +18,9 @@
     "php": "^7.0",
     "php-enspired/util": "*"
   },
-  "require-dev": {},
   "autoload": {
     "psr-4": {
       "at\\exceptable\\": "src/"
     }
-  },
-  "autoload-dev": {}
+  }
 }
