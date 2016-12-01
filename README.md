@@ -19,11 +19,11 @@ Here's a brief example Exceptable:
 ```php
 <?php
 
-use at\exceptable\exceptable,
-    at\exceptable\api\Exceptable as ExceptableAPI;
+use at\exceptable\api\Exceptable,
+    at\exceptable\exceptable as exceptableTrait;
 
-class FooException extends RuntimeException implements ExceptableAPI {
-  use exceptable;
+class FooException extends RuntimeException implements Exceptable {
+  use exceptableTrait;
 
   // define your error code.
   const UNKNOWN_FOO = 1;
@@ -56,11 +56,11 @@ Note, our Exceptable set the proper exception message for us.  But, this message
 ```php
 <?php
 
-use at\exceptable\exceptable,
-    at\exceptable\api\Exceptable as ExceptableAPI;
+use at\exceptable\api\Exceptable,
+    at\exceptable\exceptable as exceptableTrait;
 
-class FooException extends RuntimeException implements ExceptableAPI {
-  use exceptable;
+class FooException extends RuntimeException implements Exceptable {
+  use exceptableTrait;
 
   const UNKNOWN_FOO = 1;
 
@@ -92,11 +92,11 @@ Uncaught exceptions are great and all, but what if we want to catch them?  How d
 ```php
 <?php
 
-use at\exceptable\exceptable,
-    at\exceptable\api\Exceptable as ExceptableAPI;
+use at\exceptable\api\Exceptable,
+    at\exceptable\exceptable as exceptableTrait;
 
-class FooException extends RuntimeException implements ExceptableAPI {
-  use exceptable;
+class FooException extends RuntimeException implements Exceptable {
+  use exceptableTrait;
 
   const UNKNOWN_FOO = 1;
 

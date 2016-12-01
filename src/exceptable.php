@@ -21,18 +21,22 @@ declare(strict_types = 1);
 namespace at\exceptable;
 
 use at\exceptable\api\Exceptable as ExceptableAPI;
-use at\util\JSON;
+use at\util\Json,
+    at\util\jsonable;
 
 /**
  * base implementation for Exceptable interface.
+ *
+ * @method array jsonable::toArray( void )
  */
 trait exceptable {
+  use jsonable;
 
   /**
    * @const array INFO {
    *    @type array ${$code} {
    *      @type string $message   the exception message
-   *      @type int    $severity  the exception severity (one of the E_* constants)
+   *      @type int    $severity  the exception severity
    *      @type array  $tr {
    *        @type string $0    a translatable exception message with {}-delimited placeholders
    *        @type string $...  default translation values, indexed by placeholder
@@ -49,9 +53,9 @@ trait exceptable {
    * @type int    $_severity  the exception severity
    * @type array  $_context   additional exception context
    */
-  protected $_code = ExceptableAPI::DEFAULT_CODE;
+  protected $_code;
   protected $_message;
-  protected $_severity = E_ERROR;
+  protected $_severity;
   protected $_context = [];
 
   /** @see Exceptable::get_info() */
@@ -78,9 +82,9 @@ trait exceptable {
       $this->_context = array_pop($args);
     }
     $previous = (end($args) instanceof \Throwable) ? array_pop($args) : null;
-    if (is_int(end($args)) && static::has_info(end($args))) {
-      $this->_code = array_pop($args);
-    }
+    $this->_code = is_int(end($args)) ?
+      array_pop($args) :
+      $this->_makeCode();
     $this->_message = is_string(end($args)) ?
       array_pop($args) :
       $this->_makeMessage();
@@ -91,7 +95,7 @@ trait exceptable {
     if (! empty($args)) {
       $previous = new static($this->_message, $this->_code, $previous, $this->_context);
       $message = "arguments passed to Exceptable::__construct are invalid and/or out of order:\n"
-        . JSON::encode($args, [JSON::PRETTY]);
+        . Json::encode($args, [Json::PRETTY]);
       throw new \RuntimeException($message, E_ERROR, $previous);
     }
 
@@ -105,7 +109,7 @@ trait exceptable {
 
   /** @see Exceptable::getDebugMessage() */
   public function getDebugMessage() : string {
-    return "{$this->__toString()}\ncontext: " . JSON::encode($this->getContext(), [JSON::PRETTY]);
+    return "{$this->__toString()}\ncontext: " . Json::encode($this->getContext(), [Json::PRETTY]);
   }
 
   /** @see Exceptable::getRoot() */
@@ -134,7 +138,16 @@ trait exceptable {
   }
 
   /**
-   * generates a default exception severity from context.
+   * generates a default exception code.
+   *
+   * @return int  an exception code
+   */
+  protected function _makeCode() : int {
+    return ExceptableAPI::DEFAULT_CODE;
+  }
+
+  /**
+   * generates a default exception severity.
    *
    * a severity must be one of E_ERROR|E_WARNING|E_NOTICE|E_DEPRECATED.
    * if no (valid) severity provided, falls back on:
@@ -155,7 +168,7 @@ trait exceptable {
   }
 
   /**
-   * generates a default exception message from context.
+   * generates a default exception message.
    *
    * @return string  an exception message
    */
