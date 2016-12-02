@@ -21,16 +21,11 @@ declare(strict_types = 1);
 namespace at\exceptable;
 
 use at\exceptable\api\Exceptable as ExceptableAPI;
-use at\util\Json,
-    at\util\jsonable;
 
 /**
  * base implementation for Exceptable interface.
- *
- * @method array jsonable::toArray( void )
  */
 trait exceptable {
-  use jsonable;
 
   /**
    * @const array INFO {
@@ -95,7 +90,7 @@ trait exceptable {
     if (! empty($args)) {
       $previous = new static($this->_message, $this->_code, $previous, $this->_context);
       $message = "arguments passed to Exceptable::__construct are invalid and/or out of order:\n"
-        . Json::encode($args, [Json::PRETTY]);
+        . json_encode($args, JSON_PRETTY_PRINT);
       throw new \RuntimeException($message, E_ERROR, $previous);
     }
 
@@ -109,7 +104,8 @@ trait exceptable {
 
   /** @see Exceptable::getDebugMessage() */
   public function getDebugMessage() : string {
-    return "{$this->__toString()}\ncontext: " . Json::encode($this->getContext(), [Json::PRETTY]);
+    return "{$this->__toString()}\ncontext: "
+      . json_encode($this->getContext(), JSON_PRETTY_PRINT);
   }
 
   /** @see Exceptable::getRoot() */
@@ -124,17 +120,6 @@ trait exceptable {
   /** @see Exceptable::getSeverity() */
   public function getSeverity() : int {
     return $this->_severity;
-  }
-
-  /** @see JsonSerializable::jsonSerialize() */
-  public function jsonSerialize() {
-    return [
-      'type' => static::class,
-      'code' => $this->getCode(),
-      'message' => $this->getMessage(),
-      'severity' => $this->getSeverity(),
-      'context' => $this->getContext()
-    ];
   }
 
   /**

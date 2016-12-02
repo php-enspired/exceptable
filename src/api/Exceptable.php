@@ -20,8 +20,6 @@ declare(strict_types = 1);
 
 namespace at\exceptable\api;
 
-use at\util\api\Jsonable;
-
 /**
  * augmented interface for exceptions.
  *
@@ -41,11 +39,8 @@ use at\util\api\Jsonable;
  * @method Throwable Throwable::getPrevious( void )
  * @method array     Throwable::getTrace( void )
  * @method string    Throwable::getTraceAsString( void )
- *
- * @method mixed JsonSerializable::jsonSerialize( void )
- * @method array Jsonable::toArray( void )
  */
-interface Exceptable extends \Throwable, Jsonable {
+interface Exceptable extends \Throwable {
 
   /** @type int  default exception code for unknown/generic exception cases. */
   const DEFAULT_CODE = 0;

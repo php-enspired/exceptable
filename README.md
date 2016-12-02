@@ -157,7 +157,6 @@ Since we can pass a `$context` array to the Exceptable on construct, it makes se
 
 The **`getDebugMessage()`** method has a similar purpose: it returns the Exceptable's normal `__toString` message, and then adds the `$context` info at the end, in pretty json.
 
-If you've peeked at the code, you may have also noticed that `Exceptable` extends `JsonSerializable`, which means you can do `json_encode($exceptable)` and get a reasonably useful result.
 
 There's one more: **`getRoot()`**.  If you have an exception chain, it's common that the _initial_ exception is of more interest than other, intermediate exceptions; so we have a way to get it directly.
 
