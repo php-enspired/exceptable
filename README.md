@@ -1,7 +1,7 @@
 how exceptable!
 ===============
 
-Make your exceptions exceptionally exceptional.  _Exceptable_ exceptions have some nice utility methods, but the main benefit is having a way to convently and quickly organize all the error cases in your application.  _Exceptables_ are easy to create and pass details to.  They provide access to error info for both humans and code.  _Exceptables_ make it easy to extend, add, and maintain error handling code as your application grows.
+Exceptables make exceptions exceptional.  _Exceptables_ have some nice utility methods, but the main benefit is having a way to conveniently and quickly organize all the error cases in your application.  _Exceptables_ are easy to create and pass details to.  They provide access to error info for both humans and code.  _Exceptables_ make it easy to extend, add, and maintain error handling code as your application grows.
 
 dependencies
 ------------
@@ -83,7 +83,9 @@ throw new FooException(FooException::UNKNOWN_FOO, ['foo' => 'foobedobedoo']);
 // Fatal error: Uncaught FooException: i don't know who, you think is foo, but it's not foobedobedoo in ...
 ```
 
-Pretty sweet, huh?  What if you forget/don't have context?  The default value we defined for `foo` is `null`, which tells the Exceptable it's required in order to use the translated message: it will use the generic "unknown foo" message instead.
+Pretty sweet, huh?
+
+What if you forget/don't have context?  The default value we defined for `foo` is `null`, which tells the Exceptable it's required in order to use the translated message: it will use the generic "unknown foo" message instead.
 
 ### handling exceptables
 
@@ -171,6 +173,6 @@ A few things that might be useful as you start out with Exceptables:
 
 - Your Exceptable classes must extend from a built-in `Throwable` class (e.g., `RuntimeException` or `ArithmeticError`).  I mean, they don't **have too**, but they aren't very useful if they don't.
 
-- If your Exceptable extends from ErrorException (which already has a (final) method getSeverity()), exceptable::getSeverity() will need to be aliased when the trait is used.
+- If your Exceptable extends from ErrorException (which already has a (final) method `getSeverity()`), `exceptable::getSeverity()` will need to be aliased when the trait is used.
 
 - Your Exceptables cannot extend from PDOException, because it breaks the Throwable interface (`PdoException::getCode()` returns a string and not an int).
