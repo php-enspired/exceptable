@@ -20,7 +20,8 @@ declare(strict_types = 1);
 
 namespace at\exceptable;
 
-use Exception;
+use Exception,
+    Throwable;
 use at\exceptable\api\Exceptable;
 
 /**
@@ -40,6 +41,13 @@ abstract class ExceptableException extends Exception implements Exceptable {
    *  }
    */
 
+  /** @type array  default exception information. */
+  const DEFAULT_INFO = [
+    'code' => Exceptable::DEFAULT_CODE,
+    'message' => Exceptable::DEFAULT_MESSAGE,
+    'severity' => Exceptable::DEFAULT_SEVERITY
+  ];
+
   /**
    * @type int    $_code      the exception code
    * @type string $_message   the exception message
@@ -54,13 +62,17 @@ abstract class ExceptableException extends Exception implements Exceptable {
   /** @see Exceptable::get_info() */
   public static function get_info(int $code) : array {
     if (! static::has_info($code)) {
-      $m = "no exception code [{$code}] is known";
-      throw new \UnderflowException($m, E_USER_WARNING);
+      if ($code === Exceptable::DEFAULT_CODE) {
+        return static::DEFAULT_INFO;
+      }
+
+      $m = "no exception code '{$code}' is known";
+      throw new \UnderflowException($m, Exceptable::WARNING);
     }
 
     return static::INFO[$code] + [
       'code' => $code,
-      'severity' => E_ERROR
+      'severity' => Exceptable::ERROR
     ];
   }
 
@@ -70,29 +82,25 @@ abstract class ExceptableException extends Exception implements Exceptable {
   }
 
   /** @see Exceptable::__construct() */
-  public function __construct(...$args) {
-    if (is_array(end($args))) {
-      $this->_context = array_pop($args);
-    }
-    $previous = (end($args) instanceof \Throwable) ? array_pop($args) : null;
-    $this->_code = is_int(end($args)) ?
-      array_pop($args) :
-      $this->_makeCode();
-    $this->_message = is_string(end($args)) ?
-      array_pop($args) :
-      $this->_makeMessage();
-    $this->_severity = $this->_makeSeverity();
+  public function __construct(...$arguments) {
+    $args = $arguments;
+    $message = is_string(reset($args)) ? array_shift($args) : null;
+    $code = is_int(reset($args)) ? array_shift($args) : null;
+    $previous = (reset($args) instanceof Throwable) ? array_shift($args) : null;
+
+    $this->_context = is_array(reset($args)) ? array_shift($args) : [];
+    $code = $this->_makeCode($code);
+    $message = $this->_makeMessage($message, $code);
+    $this->_severity = $this->_makeSeverity($code);
 
     // exceptional exceptable: bad args
     if (! empty($args)) {
-      // what we could parse from the args becomes the new previous exception.
-      $previous = new static($this->_message, $this->_code, $previous, $this->_context);
       $message = "arguments passed to Exceptable::__construct are invalid and/or out of order:\n"
-        . json_encode($args, JSON_PRETTY_PRINT);
-      throw new \RuntimeException($message, E_ERROR, $previous);
+        . json_encode($arguments, JSON_UNESCAPED_SLASHES|JSON_PRETTY_PRINT);
+      throw new \RuntimeException($message, Exceptable::ERROR);
     }
 
-    parent::__construct($this->_message, $this->_code, $previous);
+    parent::__construct($message, $code, $previous);
   }
 
   /** @see <http://php.net/__toString> */
@@ -108,7 +116,7 @@ abstract class ExceptableException extends Exception implements Exceptable {
   }
 
   /** @see Exceptable::getRoot() */
-  public function getRoot() : \Throwable {
+  public function getRoot() : Throwable {
     $root = $this;
     while ($root->getPrevious() !== null) {
       $root = $root->getPrevious();
@@ -121,13 +129,32 @@ abstract class ExceptableException extends Exception implements Exceptable {
     return $this->_severity;
   }
 
+  /** @see Exceptable::isError() */
+  public function isError() : bool {
+    return $this->getSeverity() === Exceptable::ERROR;
+  }
+
+  /** @see Exceptable::isWarning() */
+  public function isWarning() : bool {
+    return $this->getSeverity() === Exceptable::WARNING;
+  }
+
+  /** @see Exceptable::isNotice() */
+  public function isNotice() : bool {
+    return $this->getSeverity() === Exceptable::NOTICE;
+  }
+
   /**
    * generates a default exception code.
    *
-   * @return int  an exception code
+   * @param int $code  code given on invocation
+   * @return int       an exception code
    */
-  protected function _makeCode() : int {
-    return ExceptableAPI::DEFAULT_CODE;
+  protected function _makeCode(int $code=null) : int {
+    if ($code === null) {
+      return Exceptable::DEFAULT_CODE;
+    }
+    return static::get_info($code)['code'];
   }
 
   /**
@@ -139,37 +166,43 @@ abstract class ExceptableException extends Exception implements Exceptable {
    *  - severity from previous exception
    *  - E_ERROR
    *
-   * @return int  an exception severity
+   * @param int $code  exception code
+   * @return int       an exception severity
    */
-  protected function _makeSeverity() {
+  protected function _makeSeverity(int $code) {
     $severity = $this->_context['severity'] ??
-      static::get_info($this->_code)['severity'] ??
-      E_ERROR;
+      static::get_info($code)['severity'] ??
+      static::get_info(Exceptable::DEFAULT_CODE)['severity'];
 
-    return in_array($severity, [E_ERROR, E_WARNING, E_NOTICE, E_DEPRECATED]) ?
+    $severities = [Exceptable::ERROR, Exceptable::WARNING, Exceptable::NOTICE];
+
+    return in_array($severity, $severities, true) ?
       $severity :
-      E_ERROR;
+      Exceptable::ERROR;
   }
 
   /**
    * generates a default exception message.
    *
-   * @return string  an exception message
+   * @param string $message  message given on invocation
+   * @param int $code        exception code
+   * @return string          an exception message
    */
-  protected function _makeMessage() : string {
-    return $this->_makeTrMessage() ??
-      static::get_info($this->_code)['message'] ??
-      static::get_info(ExceptableAPI::DEFAULT_CODE)['message'] ??
-      ExceptableAPI::DEFAULT_MESSAGE;
+  protected function _makeMessage(string $message=null, int $code) : string {
+    return $this->_makeTrMessage($message, $code) ??
+      static::get_info($code)['message'] ??
+      static::get_info(Exceptable::DEFAULT_CODE)['message'];
   }
 
   /**
    * generates a translated default exception message from context.
    *
-   * @return string|null  a translated exception message on success; null otherwise
+   * @param string $message  message given on invocation
+   * @param int $code        exception code
+   * @return string|null     a translated exception message on success; null otherwise
    */
-  protected function _makeTrMessage() {
-    $message = static::get_info($this->_code)['tr_message'] ?? null;
+  protected function _makeTrMessage(string $message=null, int $code) {
+    $message = $message ?? static::get_info($code)['tr_message'] ?? null;
     if (! $message) {
       return null;
     }

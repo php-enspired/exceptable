@@ -42,11 +42,27 @@ namespace at\exceptable\api;
  */
 interface Exceptable extends \Throwable {
 
-  /** @type int  default exception code for unknown/generic exception cases. */
-  const DEFAULT_CODE = 0;
+  /**
+   * exception severity levels.
+   *
+   * @type int ERROR    error
+   * @type int WARNING  warning
+   * @type int NOTICE   notice
+   */
+  const ERROR = E_ERROR;
+  const WARNING = E_WARNING;
+  const NOTICE = E_NOTICE;
 
-  /** @type string  default exception message for unknown/generic exception cases. */
+  /**
+   * default info for unknown/generic exception cases.
+   *
+   * @type int   DEFAULT_CODE
+   * @type int   DEFAULT_MESSAGE
+   * @type int   DEFAULT_SEVERITY
+   */
+  const DEFAULT_CODE = 0;
   const DEFAULT_MESSAGE = 'unknown error.';
+  const DEFAULT_SEVERITY = self::ERROR;
 
   /**
    * gets information about a code known to the implementing class.
@@ -84,14 +100,6 @@ interface Exceptable extends \Throwable {
   public function getContext() : array;
 
   /**
-   * returns a textual description of this exception (e.g., for a debug log entry),
-   * including its previous exception(s) and contextual info.
-   *
-   * @return string  description of exception
-   */
-  public function getDebugMessage() : string;
-
-  /**
    * traverses the chain of previous exception(s) and gets the root exception.
    *
    * @return Throwable  the root exception
@@ -104,4 +112,25 @@ interface Exceptable extends \Throwable {
    * @return int  the exception severity
    */
   public function getSeverity() : int;
+
+  /**
+   * checks the exception severity.
+   *
+   * @return bool  true if exception severity is "Error"; false otherwise
+   */
+  public function isError() : bool;
+
+  /**
+   * checks the exception severity.
+   *
+   * @return bool  true if exception severity is "Warning"; false otherwise
+   */
+  public function isWarning() : bool;
+
+  /**
+   * checks the exception severity.
+   *
+   * @return bool  true if exception severity is "Notice"; false otherwise
+   */
+  public function isNotice() : bool;
 }
