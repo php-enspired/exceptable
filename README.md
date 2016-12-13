@@ -67,14 +67,13 @@ class FooException extends RuntimeException implements Exceptable {
   const INFO = [
     self::UNKNOWN_FOO => [
       'message' => 'unknown foo',
-      'tr_message' => "i don't know who, you think is foo, but it's not {foo}",
-      'tr' => ['foo' => null]
+      'tr_message' => "i don't know who, you think is foo, but it's not {foo}"
     ]
   ];
 }
 ```
 
-The `tr_message` is a _translatable message_.  It takes named {placeholders} from contextual information your code will provide at runtime.  The `tr` array is a `placeholder` => `default value` map.
+The `tr_message` is a _translatable message_.  It takes named {placeholders} from contextual information your code will provide at runtime.  If a value for a named placeholder is not provided, then the Exceptable will fall back on using the default message.
 
 ```php
 <?php
@@ -82,10 +81,6 @@ The `tr_message` is a _translatable message_.  It takes named {placeholders} fro
 throw new FooException(FooException::UNKNOWN_FOO, ['foo' => 'foobedobedoo']);
 // Fatal error: Uncaught FooException: i don't know who, you think is foo, but it's not foobedobedoo in ...
 ```
-
-Pretty sweet, huh?
-
-What if you forget/don't have context?  The default value we defined for `foo` is `null`, which tells the Exceptable it's required in order to use the translated message: it will use the generic "unknown foo" message instead.
 
 ### handling exceptables
 
@@ -106,8 +101,7 @@ class FooException extends RuntimeException implements Exceptable {
     self::UNKNOWN_FOO => [
       'message' => 'unknown foo',
       'severity' => E_WARNING,
-      'tr_message' => "i don't know who, you think is foo, but it's not {foo}",
-      'tr' => ['foo' => null]
+      'tr_message' => "i don't know who, you think is foo, but it's not {foo}"
     ]
   ];
 }

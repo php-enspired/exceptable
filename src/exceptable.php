@@ -20,6 +20,7 @@ declare(strict_types = 1);
 
 namespace at\exceptable;
 
+use Throwable;
 use at\exceptable\api\Exceptable as ExceptableAPI;
 
 /**
@@ -30,13 +31,10 @@ trait exceptable {
   /**
    * @const array INFO {
    *    @type array ${$code} {
-   *      @type string $message   the exception message
-   *      @type int    $severity  the exception severity
-   *      @type array  $tr {
-   *        @type string $0    a translatable exception message with {}-delimited placeholders
-   *        @type string $...  default translation values, indexed by placeholder
-   *      }
-   *      @type mixed  $...       implementation-specific additional info
+   *      @type string $message     the exception message
+   *      @type int    $severity    the exception severity
+   *      @type string $tr_message  a translatable exception message with {}-delimited placeholders
+   *      @type mixed  $...         implementation-specific additional info
    *    }
    *    ...
    *  }
@@ -85,9 +83,9 @@ trait exceptable {
       $this->_makeMessage();
     $this->_severity = $this->_makeSeverity();
 
-    // bad args: an exceptional exception.
-    // what we could parse from the args becomes the new previous exception.
+    // exceptional exceptable: bad args
     if (! empty($args)) {
+      // what we could parse from the args becomes the new previous exception.
       $previous = new static($this->_message, $this->_code, $previous, $this->_context);
       $message = "arguments passed to Exceptable::__construct are invalid and/or out of order:\n"
         . json_encode($args, JSON_PRETTY_PRINT);
@@ -97,15 +95,16 @@ trait exceptable {
     parent::__construct($this->_message, $this->_code, $previous);
   }
 
+  /** @see <http://php.net/__toString> */
+  public function __toString() {
+    return parent::__toString()
+      . "\ncontext: "
+      . json_encode($this->getContext(), JSON_UNESCAPED_SLASHES|JSON_PRETTY_PRINT);
+  }
+
   /** @see Exceptable::getContext() */
   public function getContext() : array {
     return $this->_context;
-  }
-
-  /** @see Exceptable::getDebugMessage() */
-  public function getDebugMessage() : string {
-    return "{$this->__toString()}\ncontext: "
-      . json_encode($this->getContext(), JSON_PRETTY_PRINT);
   }
 
   /** @see Exceptable::getRoot() */
@@ -170,20 +169,19 @@ trait exceptable {
    * @return string|null  a translated exception message on success; null otherwise
    */
   protected function _makeTrMessage() {
-    $info = static::get_info($this->_code)['tr'] ?? null;
-    if (! $info) {
+    $message = static::get_info($this->_code)['tr_message'] ?? null;
+    if (! $message) {
       return null;
     }
 
-    $message = array_unshift($info);
-    $context = $this->_context;
+    preg_match_all('(\{(\w+)\})', $message, $matches);
+    $placeholders = $matches[1];
     $replacements = [];
-    foreach ($info as $placeholder => $default) {
-      $replacement = $context[$placeholder] ?? $default;
-      if ($replacement === null) {
+    foreach ($placeholders as $placeholder) {
+      if (! isset($this->_context[$placeholder])) {
         return null;
       }
-      $replacements["{{$placeholder}}"] = $replacement;
+      $replacements["{{$placeholder}}"] = $this->_context[$placeholder];
     }
 
     return strtr($message, $replacements);
