@@ -11,7 +11,7 @@ Requires php 7.0 or later, and the `php-enspired/util` package.
 basic usage
 -----------
 
-When used with a class that inherits from a `Throwable`, the `exceptable` trait provides a complete, basic implementation for the `Exceptable` interface.  Simply define your error codes and information, and you have a working implementation.
+The `ExceptableException` class provides a complete base implementation for the `Exceptable` interface.  Simply extend it, define your error codes and information, and you have a working implementation.
 
 ### your first exceptable
 
@@ -19,11 +19,9 @@ Here's a brief example Exceptable:
 ```php
 <?php
 
-use at\exceptable\api\Exceptable,
-    at\exceptable\exceptable as exceptableTrait;
+use at\exceptable\ExceptableException;
 
-class FooException extends RuntimeException implements Exceptable {
-  use exceptableTrait;
+class FooException extends ExceptableException {
 
   // define your error code.
   const UNKNOWN_FOO = 1;
@@ -37,8 +35,6 @@ class FooException extends RuntimeException implements Exceptable {
   // that's it
 }
 ```
-
-Why a trait and not an abstract class? using a trait allows you to choose your own base `Exception`/`Throwable` class.
 
 Exceptables have very flexible constructors.  The arguments are the same as those on the `Throwable` interface — `$message`, `$code`, and `$previous` — with an additional argument `$context` which accepts an array of values you provide (typically, details for the exception message).  The _flexiblity_ is that these arguments are **all optional**.  Often, the only argument you'll need to provide is the error code:
 
@@ -56,11 +52,9 @@ Note, our Exceptable set the proper exception message for us.  But, this message
 ```php
 <?php
 
-use at\exceptable\api\Exceptable,
-    at\exceptable\exceptable as exceptableTrait;
+use at\exceptable\ExceptableException;
 
-class FooException extends RuntimeException implements Exceptable {
-  use exceptableTrait;
+class FooException extends ExceptableException {
 
   const UNKNOWN_FOO = 1;
 
@@ -89,11 +83,9 @@ Uncaught exceptions are great and all, but what if we want to catch them?  How d
 ```php
 <?php
 
-use at\exceptable\api\Exceptable,
-    at\exceptable\exceptable as exceptableTrait;
+use at\exceptable\ExceptableException;
 
-class FooException extends RuntimeException implements Exceptable {
-  use exceptableTrait;
+class FooException extends ExceptableException {
 
   const UNKNOWN_FOO = 1;
 
@@ -151,22 +143,10 @@ The **`getSeverity()`** method might be familiar to you, if you've ever seen `Er
 
 Since we can pass a `$context` array to the Exceptable on construct, it makes sense that we'd have a **`getContext()`** method to get it back.
 
-The **`getDebugMessage()`** method has a similar purpose: it returns the Exceptable's normal `__toString` message, and then adds the `$context` info at the end, in pretty json.
-
+**`__toString`** generates a normal Exception `__toString` message, and adds the `$context` info at the end, in pretty json.
 
 There's one more: **`getRoot()`**.  If you have an exception chain, it's common that the _initial_ exception is of more interest than other, intermediate exceptions; so we have a way to get it directly.
 
 ### extending exceptables
 
 If you find yourself needing more or situation-specific functionality, you can override the methods inherited from the `exceptable` trait.  Read the source first  : )
-
-quick tips
-----------
-
-A few things that might be useful as you start out with Exceptables:
-
-- Your Exceptable classes must extend from a built-in `Throwable` class (e.g., `RuntimeException` or `ArithmeticError`).  I mean, they don't **have too**, but they aren't very useful if they don't.
-
-- If your Exceptable extends from ErrorException (which already has a (final) method `getSeverity()`), `exceptable::getSeverity()` will need to be aliased when the trait is used.
-
-- Your Exceptables cannot extend from PDOException, because it breaks the Throwable interface (`PdoException::getCode()` returns a string and not an int).

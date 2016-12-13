@@ -20,13 +20,13 @@ declare(strict_types = 1);
 
 namespace at\exceptable;
 
-use Throwable;
-use at\exceptable\api\Exceptable as ExceptableAPI;
+use Exception;
+use at\exceptable\api\Exceptable;
 
 /**
  * base implementation for Exceptable interface.
  */
-trait exceptable {
+abstract class ExceptableException extends Exception implements Exceptable {
 
   /**
    * @const array INFO {
