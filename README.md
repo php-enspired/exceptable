@@ -1,12 +1,17 @@
 how exceptable!
 ===============
 
-Exceptables make exceptions exceptional.  _Exceptables_ have some nice utility methods, but the main benefit is having a way to conveniently and quickly organize all the error cases in your application.  _Exceptables_ are easy to create and pass details to.  They provide access to error info for both humans and code.  _Exceptables_ make it easy to extend, add, and maintain error handling code as your application grows.
+_Exceptables_ make exceptions exceptional.  Exceptables have some nice utility methods, but the main benefit is having a way to conveniently and quickly organize all the error cases in your application.  Exceptables are easy to create and pass details to.  They provide access to error info for both humans and code.  Exceptables make it easy to extend, add, and maintain error handling code as your application grows.
 
 dependencies
 ------------
 
-Requires php 7.0 or later, and the `php-enspired/util` package.
+Requires php 7.0 or later.
+
+installation
+------------
+
+Recommended installation method is via [Composer](https://getcomposer.org/): simply `composer require php-enspired/exceptable`.
 
 basic usage
 -----------
