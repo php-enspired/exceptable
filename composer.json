@@ -24,5 +24,8 @@
     "psr-4": {
       "at\\exceptable\\": "src/"
     }
+  },
+  "scripts": {
+    "test:unit" : "vendor/bin/phpunit --bootstrap vendor/autoload.php tests"
   }
 }

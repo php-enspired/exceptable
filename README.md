@@ -83,7 +83,7 @@ throw new FooException(FooException::UNKNOWN_FOO, ['foo' => 'foobedobedoo']);
 
 ### handling exceptables
 
-Uncaught exceptions are great and all, but what if we want to catch them?  How do we know what to do with them?  Because your error conditions have codes, your code can read Exceptables almost as well as you can.  You can also provide a _severity_ rating (one of `E_ERROR`|`E_WARNING`|`E_NOTICE`|`E_DEPRECATED`), either at runtime or as a part of the default exception info, which your code can use as a hint as to how serious the problem is.
+Uncaught exceptions are great and all, but what if we want to catch them?  How do we know what to do with them?  Because your error conditions have codes, your code can read Exceptables almost as well as you can.  You can also provide a _severity_ rating (one of `Exceptable::ERROR`|`Exceptable::WARNING`|`Exceptable::NOTICE`), either at runtime or as a part of the default exception info, which your code can use as a hint as to how serious the problem is.
 
 ```php
 <?php
@@ -97,7 +97,7 @@ class FooException extends ExceptableException {
   const INFO = [
     self::UNKNOWN_FOO => [
       'message' => 'unknown foo',
-      'severity' => E_WARNING,
+      'severity' => Exceptable::WARNING,
       'tr_message' => "i don't know who, you think is foo, but it's not {foo}"
     ]
   ];
@@ -108,7 +108,7 @@ class FooException extends ExceptableException {
 <?php
 
 try {
-  // we don't provide a severity, so it defaults to E_WARNING as we defined above
+  // here we don't provide a severity, so it defaults to WARNING as we defined above
   throw new FooException(FooException::UNKNOWN_FOO, ['foo' => 'foobedobedoo']);
 } catch (FooException $e) {
   handleFoo($e);
@@ -118,7 +118,7 @@ try {
 try {
   throw new FooException(
     FooException::UNKNOWN_FOO,
-    ['severity' => E_ERROR, 'foo' => 'cthulhu']
+    ['severity' => Exceptable::ERROR, 'foo' => 'cthulhu']
   );
 } catch (FooException $e) {
   handleFoo($e);
@@ -127,12 +127,12 @@ try {
 
 function handleFoo(FooException $e) {
   switch ($e->getSeverity()) {
-    case E_WARNING :
+    case Exceptable::WARNING :
       error_log($e->getMessage());
       introduceFoo($e->getContext()['foo']);
       // everyone is happy
       break;
-    case E_ERROR :
+    case Exceptable::ERROR :
       error_log($e->getDebugMessage());
       foo_RUN_AWAY_RUN_AWAY();
       die(1);
@@ -144,14 +144,20 @@ function handleFoo(FooException $e) {
 
 In the above examples, you might have noticed some of those useful utilities.
 
-The **`getSeverity()`** method might be familiar to you, if you've ever seen `ErrorException`s (hey, now you have a concrete idea of what you can pass as that argument).
+The **`getSeverity()`** method might be familiar to you, if you've ever seen `ErrorException`s (hey, now you have a concrete idea of what you can pass as that argument).  There are also convenience methods for checking the exceptable severity: `isError()`, `isWarning()`, and `isNotice()`.
 
 Since we can pass a `$context` array to the Exceptable on construct, it makes sense that we'd have a **`getContext()`** method to get it back.
 
 **`__toString`** generates a normal Exception `__toString` message, and adds the `$context` info at the end, in pretty json.
 
-There's one more: **`getRoot()`**.  If you have an exception chain, it's common that the _initial_ exception is of more interest than other, intermediate exceptions; so we have a way to get it directly.
+When you have a chain of previous exception(s), it's common that the _initial_ exception is of more interest than other, intermediate exceptions; so we have **`getRoot()`** to get it directly.
 
 ### extending exceptables
 
 If you find yourself needing more or situation-specific functionality, you can override the methods inherited from the `exceptable` trait.  Read the source first  : )
+
+There is also a test suite for the base `ExceptableException` class, which might also be useful as a starting point for testing your own Exceptables.  Run it with `composer test:unit`.
+
+### contributing or getting help
+
+I'm on Freenode at `#php-enspired`, or open an issue [on github](https://github.com/php-enspired/exceptable).  Feedback is welcomed as well.
