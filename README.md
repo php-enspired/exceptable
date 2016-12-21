@@ -16,7 +16,7 @@ Recommended installation method is via [Composer](https://getcomposer.org/): sim
 basic usage
 -----------
 
-The `ExceptableException` class provides a complete base implementation for the `Exceptable` interface.  Simply extend it, define your error codes and information, and you have a working implementation.
+The `Exception` class provides a complete base implementation for the `Exceptable` interface.  Simply extend it, define your error codes and information, and you have a working implementation.
 
 ### your first exceptable
 
