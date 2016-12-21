@@ -20,20 +20,19 @@ declare(strict_types = 1);
 
 namespace at\util\tests;
 
-use RuntimeException,
-    UnderflowException,
-    Throwable;
-use at\exceptable\api\Exceptable,
-    at\exceptable\ExceptableException;
+use Throwable;
+use at\exceptable\Exceptable,
+    at\exceptable\ExceptableException,
+    at\exceptable\Exception;
 use PHPUnit\Framework\TestCase;
 
 /**
- * tests ExceptableException (also suitable for testing concrete implementations).
+ * tests Exception (also suitable for testing concrete implementations).
  */
 class ExceptableTest extends TestCase {
 
   /**
-   * @covers ExpectableException::get_info()
+   * @covers Exception::get_info()
    */
   public function testGetInfo() {
     $exceptable = $this->_getExceptable();
@@ -45,7 +44,7 @@ class ExceptableTest extends TestCase {
       $this->assertEquals($code, $actual['code']);
       $this->assertContains(
         $actual['severity'],
-        [E_ERROR, E_WARNING, E_NOTICE],
+        [Exceptable::ERROR, Exceptable::WARNING, Exceptable::NOTICE],
         true
       );
       $this->assertInternalType('string', $actual['message']);
@@ -53,7 +52,7 @@ class ExceptableTest extends TestCase {
   }
 
   /**
-   * @covers ExceptableException::has_info()
+   * @covers Exception::has_info()
    */
   public function testHasInfo() {
     $exceptable = $this->_getExceptable();
@@ -67,7 +66,7 @@ class ExceptableTest extends TestCase {
   }
 
   /**
-   * @covers ExceptableException::__construct()
+   * @covers Exception::__construct()
    * @dataProvider _exceptableProvider
    *
    * @param array          $args      exceptable constructor arguments
@@ -98,18 +97,20 @@ class ExceptableTest extends TestCase {
 
     // unknown code
     $this->_setExceptionExpectations(
-      new UnderflowException("no exception code '99' is known", Exceptable::WARNING)
+      new ExceptableException(ExceptableException::NO_SUCH_CODE, ['code' => 99])
     );
     $this->_getExceptable(99);
   }
 
   /**
    * @covers Exceptable::__construct()
+   * @covers Exceptable::addContext()
    * @covers Exceptable::getContext()
    */
   public function testGetContext() {
     $context = ['foo' => 'foo'];
     $this->assertEquals($context, $this->_getExceptable($context)->getContext());
+    $this->assertEquals($context, $this->_getExceptable()->addContext($context)->getContext());
   }
 
   /**
@@ -129,8 +130,8 @@ class ExceptableTest extends TestCase {
    * @covers Exceptable::getRoot()
    */
   public function testGetRoot() {
-    $root = new RuntimeException;
-    $previous = new RuntimeException('', 0, $root);
+    $root = $this->_getExceptable();
+    $previous = $this->_getExceptable($root);
     $actual = $this->_getExceptable($previous)->getRoot();
     $this->assertEquals(
       get_class($root) . ':' . spl_object_hash($root),
@@ -141,6 +142,7 @@ class ExceptableTest extends TestCase {
   /**
    * @covers Exceptable::__construct()
    * @covers Exceptable::getSeverity()
+   * @covers Exceptable::setSeverity()
    * @covers Exceptable::isError()
    * @covers Exceptable::isWarning()
    * @covers Exceptable::isNotice()
@@ -156,7 +158,7 @@ class ExceptableTest extends TestCase {
     foreach ($severities as $severity) {
       $this->assertEquals(
         $severity,
-        $this->_getExceptable(['severity' => $severity])->getSeverity()
+        $this->_getExceptable()->setSeverity($severity)->getSeverity()
       );
     }
 
@@ -171,7 +173,7 @@ class ExceptableTest extends TestCase {
     // is*() severity check methods
     foreach (array_keys($severities) as $method) {
       foreach ($severities as $check => $severity) {
-        $actual = $this->_getExceptable(['severity' => $severity])->$method();
+        $actual = $this->_getExceptable()->setSeverity($severity)->$method();
         if ($method === $check) {
           $this->assertTrue($actual);
         } else {
@@ -187,7 +189,9 @@ class ExceptableTest extends TestCase {
   public function testToString() {
     $context = ['foo' => 'foo'];
     $this->assertRegExp(
-      "(\ncontext: " . json_encode($context, JSON_UNESCAPED_SLASHES|JSON_PRETTY_PRINT) . "$)",
+      "(\ncontext: "
+        . json_encode($context, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT)
+        . "$)",
       $this->_getExceptable($context)->__toString()
     );
   }
@@ -200,7 +204,7 @@ class ExceptableTest extends TestCase {
   public function _exceptableProvider() : array {
     $message = 'message';
     $code = 1;
-    $previous = new RuntimeException;
+    $previous = $this->_getExceptable();
     $context = ['foo' => 'foo'];
 
     $tests = [];
@@ -222,10 +226,7 @@ class ExceptableTest extends TestCase {
     }
 
     // uncool
-    $exception = new RuntimeException(
-      'arguments passed to Exceptable::__construct are invalid and/or out of order',
-      Exceptable::ERROR
-    );
+    $exception = new ExceptableException(ExceptableException::INVALID_CONSTRUCT_ARGS);
 
     // wrong order
     foreach ($tests as $test) {

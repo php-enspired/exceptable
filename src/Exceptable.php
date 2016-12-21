@@ -18,13 +18,15 @@
  */
 declare(strict_types = 1);
 
-namespace at\exceptable\api;
+namespace at\exceptable;
+
+use Throwable;
 
 /**
  * augmented interface for exceptions.
  *
  * caution:
- *  - the implementing class must extend from a Throwable class (e.g., RuntimeException).
+ *  - the implementing class must extend from a Throwable class (e.g., Exception).
  *  - if the implementing class extends ErrorException
  *    (which already has a (final) method getSeverity()),
  *    exceptable::getSeverity() will need to be aliased when the trait is used.
@@ -83,14 +85,23 @@ interface Exceptable extends \Throwable {
   public static function has_info(int $code) : bool;
 
   /**
-   * @param string    $0  exception message
-   *                      if omitted, a message must be set based on the exception code
-   * @param int       $1  exception code
-   *                      if omitted, a default code must be set
-   * @param Throwable $2  previous exception
-   * @param array     $3  additional exception context
+   * @param string    $0          exception message
+   *                              if omitted, a message must be set based on the exception code
+   * @param int       $1          exception code
+   *                              if omitted, a default code must be set
+   * @param Throwable $2          previous exception
+   * @param array     $3          additional exception context
+   * @throws ExceptableException  if argument(s) are invalid
    */
   public function __construct(...$args);
+
+  /**
+   * adds contextual info to this exception.
+   *
+   * @param array $context  map of info to add
+   * @return $this
+   */
+  public function addContext(array $context) : Exceptable;
 
   /**
    * gets contextual info about this exception.
@@ -133,4 +144,13 @@ interface Exceptable extends \Throwable {
    * @return bool  true if exception severity is "Notice"; false otherwise
    */
   public function isNotice() : bool;
+
+  /**
+   * adds contextual info to this exception.
+   *
+   * @param int $severity         one of Exceptable::ERROR|WARNING|NOTICE
+   * @throws ExceptableException  if severity is invalid
+   * @return $this
+   */
+  public function setSeverity(int $severity) : Exceptable;
 }

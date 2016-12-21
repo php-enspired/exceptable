@@ -24,9 +24,9 @@ Here's a brief example Exceptable:
 ```php
 <?php
 
-use at\exceptable\ExceptableException;
+use at\exceptable\Exception;
 
-class FooException extends ExceptableException {
+class FooException extends Exception {
 
   // define your error code.
   const UNKNOWN_FOO = 1;
@@ -57,9 +57,9 @@ Note, our Exceptable set the proper exception message for us.  But, this message
 ```php
 <?php
 
-use at\exceptable\ExceptableException;
+use at\exceptable\Exception;
 
-class FooException extends ExceptableException {
+class FooException extends Exception {
 
   const UNKNOWN_FOO = 1;
 
@@ -81,6 +81,8 @@ throw new FooException(FooException::UNKNOWN_FOO, ['foo' => 'foobedobedoo']);
 // Fatal error: Uncaught FooException: i don't know who, you think is foo, but it's not foobedobedoo in ...
 ```
 
+`$context` can also be provided later, after instantiation, via the `addContext()` method.  Values provided this way will be merged with existing values.
+
 ### handling exceptables
 
 Uncaught exceptions are great and all, but what if we want to catch them?  How do we know what to do with them?  Because your error conditions have codes, your code can read Exceptables almost as well as you can.  You can also provide a _severity_ rating (one of `Exceptable::ERROR`|`Exceptable::WARNING`|`Exceptable::NOTICE`), either at runtime or as a part of the default exception info, which your code can use as a hint as to how serious the problem is.
@@ -88,9 +90,9 @@ Uncaught exceptions are great and all, but what if we want to catch them?  How d
 ```php
 <?php
 
-use at\exceptable\ExceptableException;
+use at\exceptable\Exception;
 
-class FooException extends ExceptableException {
+class FooException extends Exception {
 
   const UNKNOWN_FOO = 1;
 
@@ -116,26 +118,23 @@ try {
 }
 
 try {
-  throw new FooException(
-    FooException::UNKNOWN_FOO,
-    ['severity' => Exceptable::ERROR, 'foo' => 'cthulhu']
-  );
+  throw (new FooException(FooException::UNKNOWN_FOO, ['foo' => 'cthulhu']))
+    ->setSeverity(Exceptable::ERROR);
 } catch (FooException $e) {
   handleFoo($e);
   // RUN AWAY, RUN AWAY
 }
 
 function handleFoo(FooException $e) {
-  switch ($e->getSeverity()) {
-    case Exceptable::WARNING :
-      error_log($e->getMessage());
-      introduceFoo($e->getContext()['foo']);
-      // everyone is happy
-      break;
-    case Exceptable::ERROR :
-      error_log($e->getDebugMessage());
-      foo_RUN_AWAY_RUN_AWAY();
-      die(1);
+  if ($e->isWarning()) {
+    error_log($e->getMessage());
+    introduceFoo($e->getContext()['foo']);
+    return;  // everyone is happy
+  }
+  if ($e->isError()) {
+    error_log($e->__toString());
+    foo_RUN_AWAY_RUN_AWAY();
+    die(1);
   }
 }
 ```
@@ -144,9 +143,9 @@ function handleFoo(FooException $e) {
 
 In the above examples, you might have noticed some of those useful utilities.
 
-The **`getSeverity()`** method might be familiar to you, if you've ever seen `ErrorException`s (hey, now you have a concrete idea of what you can pass as that argument).  There are also convenience methods for checking the exceptable severity: `isError()`, `isWarning()`, and `isNotice()`.
+The **`getSeverity()`** method might be familiar to you, if you've ever seen `ErrorException`s (hey, now you have a concrete idea of what you can pass as that argument).  As shown, we also have convenience methods for checking the exceptable severity: `isError()`, `isWarning()`, and `isNotice()`.
 
-Since we can pass a `$context` array to the Exceptable on construct, it makes sense that we'd have a **`getContext()`** method to get it back.
+Since we can pass a `$context` array to the Exceptable, it makes sense that we'd have a **`getContext()`** method to get it back.
 
 **`__toString`** generates a normal Exception `__toString` message, and adds the `$context` info at the end, in pretty json.
 
@@ -156,7 +155,7 @@ When you have a chain of previous exception(s), it's common that the _initial_ e
 
 If you find yourself needing more or situation-specific functionality, you can override the methods inherited from the `exceptable` trait.  Read the source first  : )
 
-There is also a test suite for the base `ExceptableException` class, which might also be useful as a starting point for testing your own Exceptables.  Run it with `composer test:unit`.
+There is also a test suite for the base `Exception` class, which might also be useful as a starting point for testing your own Exceptables.  Run it with `composer test:unit`.
 
 ### contributing or getting help
 
