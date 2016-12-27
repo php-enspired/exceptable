@@ -52,10 +52,15 @@ class ExceptableException extends Exception {
   /**
    * @type int NO_SUCH_CODE            invalid exception code.
    * @type int INVALID_CONSTRUCT_ARGS  invalid/out-of-order constructor arguments.
+   * @type int INVALID_SEVERITY        invalid severity level.
+   * @type int UNCAUGHT_EXCEPTION      uncaught/unhandled exception during runtime.
+   * @type int INVALID_HANDLER         invalid handler (e.g., wrong signature, or throws).
    */
   const NO_SUCH_CODE = 1;
   const INVALID_CONSTRUCT_ARGS = (1<<1);
   const INVALID_SEVERITY = (1<<2);
+  const UNCAUGHT_EXCEPTION = (1<<3);
+  const INVALID_HANDLER = (1<<4);
 
   /** @see Exceptable::INFO */
   const INFO = [
@@ -74,6 +79,16 @@ class ExceptableException extends Exception {
       'severity' => Exceptable::WARNING,
       'tr_message' =>
         'severity must be one of Exceptable::ERROR|WARNING|NOTICE; {severity} provided'
+    ],
+    self::UNCAUGHT_EXCEPTION => [
+      'message' => 'uncaught exception',
+      'severity' => Exceptable::ERROR,
+      'tr_message' => 'no registered handler caught exception: {__rootMessage__}'
+    ],
+    self::INVALID_HANDLER => [
+      'message' => 'invalid handler',
+      'severity' => Exceptable::ERROR,
+      'tr_message' => 'invalid handler [{type}]: {__rootMessage__}'
     ]
   ];
 }

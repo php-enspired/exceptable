@@ -18,7 +18,7 @@
  */
 declare(strict_types = 1);
 
-namespace at\util\tests;
+namespace at\exceptable\tests;
 
 use Throwable;
 use at\exceptable\Exceptable,

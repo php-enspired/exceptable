@@ -112,6 +112,9 @@ abstract class Exception extends BaseException implements Exceptable {
     }
 
     parent::__construct($message, $code, $previous);
+    if ($previous) {
+      $this->addContext(['__rootMessage__' => $this->getRoot()->getMessage()]);
+    }
   }
 
   /** @see <http://php.net/__toString> */
