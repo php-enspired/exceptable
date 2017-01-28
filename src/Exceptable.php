@@ -63,16 +63,16 @@ interface Exceptable extends \Throwable {
    * @type int   DEFAULT_SEVERITY
    */
   const DEFAULT_CODE = 0;
-  const DEFAULT_MESSAGE = 'unknown error.';
+  const DEFAULT_MESSAGE = '';
   const DEFAULT_SEVERITY = self::ERROR;
 
   /**
    * gets information about a code known to the implementing class.
    *
-   * @param int $code            the exception code to look up
-   * @throws UnderflowException  if the code is not known to the implementation
-   * @return array               a map of info about the code,
-   *                             including (at a minimum) its "code", "severity", and "message".
+   * @param int $code             the exception code to look up
+   * @throws ExceptableException  if the code is not known to the implementation
+   * @return array                a map of info about the code,
+   *                              including (at a minimum) its "code", "severity", and "message".
    */
   public static function get_info(int $code) : array;
 

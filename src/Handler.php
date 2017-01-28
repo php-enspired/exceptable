@@ -59,13 +59,13 @@ class Handler {
    * adds an error handler.
    * @see <http://php.net/set_error_handler> $error_handler
    *
-   * @param callable $handler   the error handler to add
-   * @param int      $severity  the error severity to trigger this handler
-   *                            (one of the E_* constants, or omit for "any severity")
-   * @return Handler            $this
+   * @param callable $handler  the error handler to add
+   * @param int      $types    the error type(s) to trigger this handler
+   *                           (bitmask of E_* constants, or omit for "any severity")
+   * @return Handler           $this
    */
-  public function onError(callable $handler, int $severity=null) : Handler {
-    $this->_errorHandlers[] = new _Handler($handler, _Handler::TYPE_ERROR, $severity);
+  public function onError(callable $handler, int $types=null) : Handler {
+    $this->_errorHandlers[] = new _Handler($handler, _Handler::TYPE_ERROR, $types);
     return $this;
   }
 
@@ -124,12 +124,12 @@ class Handler {
   /**
    * sets error types which should be thrown as ErrorExceptions.
    *
-   * @param int $severity  the error types to be thrown
-   *                       (defaults to Errors and Warnings; use 0 to stop throwing)
-   * @return Handler       $this
+   * @param int $types  the error types to be thrown
+   *                    (defaults to E_ERROR|E_WARNING; use 0 to stop throwing)
+   * @return Handler    $this
    */
-  public function throw(int $severity=E_ERROR|E_WARNING) : Handler {
-    $this->_throw = $severity;
+  public function throw(int $types=E_ERROR|E_WARNING) : Handler {
+    $this->_throw = $types;
     return $this;
   }
 
@@ -207,7 +207,7 @@ class Handler {
 
     $e = error_get_last();
     if ($e && $e['type'] === E_ERROR) {
-      throw new ErrorException($e['message'], 0, $e['type'], $e['file'], $e['line']);
+      $this->_error($e['type'], $e['message'], $e['file'], $e['line'], $e['context']);
     }
 
     foreach ($this->_shutdownHandlers as $handler) {

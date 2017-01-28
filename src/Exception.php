@@ -102,6 +102,7 @@ abstract class Exception extends BaseException implements Exceptable {
     $code = $this->_makeCode($code);
     $message = $this->_makeMessage($message, $code);
     $this->setSeverity($this->_makeSeverity($code));
+    $this->addContext(['__severity__' => $this->getSeverity()]);
 
     // exceptional exceptable: bad args
     if (! empty($args)) {
