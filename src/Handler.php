@@ -22,6 +22,7 @@ namespace at\exceptable;
 
 use ErrorException,
     Throwable;
+use at\exceptable\Exceptable;
 
 class Handler {
 
@@ -239,7 +240,7 @@ class _Handler {
   /** @internal  invokes the callback with given arguments. */
   public function handle(...$arguments) : bool {
     try {
-      return ($this->_handler)(...($arguments + $this->_arguments));
+      return (($this->_handler)(...($arguments + $this->_arguments)) === true) ?: false;
     } catch (Throwable $e) {
       throw new ExceptableException(
         ExceptableException::INVALID_HANDLER,
@@ -252,7 +253,7 @@ class _Handler {
   /** @internal  checks whether this handler is registered for the given severity. */
   public function handles(int $type, int $severity) : bool {
     return $type === $this->_type &&
-      ($this->_severity === self::ANY_SEVERITY || ($severity && $this->_severity) === $severity);
+      ($this->_severity === self::ANY_SEVERITY || ($severity & $this->_severity) === $severity);
   }
 
   /** @internal  specifies default arguments to pass to handler. */
