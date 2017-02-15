@@ -3,7 +3,7 @@
 how exceptable!
 ===============
 
-_Exceptables_ make exceptions exceptional.  Exceptables have some nice utility methods, but the main benefit is having a way to conveniently and quickly organize all the error cases in your application.  Exceptables are easy to create and pass details to.  They provide access to error info for both humans and code.  Exceptables make it easy to extend, add, and maintain error handling code as your application grows.
+_Exceptables_ make exceptions exceptional.  Exceptables provide some nice utility methods, but the main benefit is having a way to conveniently and quickly organize all the error cases in your application.  Exceptables are easy to create and pass details to.  They provide access to error info for both humans and code.  Exceptables make it easy to extend, add, and maintain error handling code as your application grows.
 
 dependencies
 ------------
@@ -20,19 +20,32 @@ a quick taste
 ```php
 <?php
 
-use your\imaginary\FooException;
 use at\exceptable\Handler;
+use at\exceptable\Exception as Exceptable;
 
-$context = ['foo' => 'foobedobedoo'];
-throw new FooException(FooException::UNKNOWN_FOO, $context);
+// a simple Exceptable just for you
+class FooException extends Exceptable {
+
+  const UNKNOWN_FOO = 1;
+
+  const INFO = [
+    self::UNKNOWN_FOO => [
+      'message' => 'unknown foo',
+      'tr_message' => "i don't know who, you think is foo, but it's not {foo}"
+    ]
+  ];
+}
+
+throw new FooException(FooException::UNKNOWN_FOO);
 // on your screen:
-// Fatal error: Uncaught FooException: i don't know who, you think is foo, but it's not foobedobedoo in ...
+// Fatal error: Uncaught FooException: unknown foo in ...
 
 $handler = new Handler();
 $handler
   ->onException(function($e) { error_log($e->getMessage()); return true; })
   ->register();
 
+$context = ['foo' => 'foobedobedoo'];
 throw new FooException(FooException::UNKNOWN_FOO, $context);
 // in your error log:
 // i don't know who, you think is foo, but it's not foobedobedoo
