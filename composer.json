@@ -3,7 +3,7 @@
   "description": "Augmented features for exceptions and exception handling.",
   "type": "library",
   "homepage": "http://php.enspi.red",
-  "license": "GPL-3.0 (only)",
+  "license": "GPL-3.0-only",
   "authors": [
     {
       "name": "Adrian",
