@@ -93,16 +93,22 @@ abstract class Exception extends BaseException implements Exceptable {
   /** @see Exceptable::__construct() */
   public function __construct(...$arguments) {
     $args = $arguments;
+
     $message = is_string(reset($args)) ? array_shift($args) : null;
-    $code = is_int(reset($args)) ? array_shift($args) : null;
+    $code = $this->_makeCode(is_int(reset($args)) ? array_shift($args) : null);
     $previous = (reset($args) instanceof Throwable) ? array_shift($args) : null;
-    if (is_array(reset($args))) {
-      $this->addContext(array_shift($args));
-    }
-    $code = $this->_makeCode($code);
-    $message = $this->_makeMessage($message, $code);
     $this->setSeverity($this->_makeSeverity($code));
-    $this->addContext(['__severity__' => $this->getSeverity()]);
+
+    $context = is_array(reset($args)) ? array_shift($args) : [];
+    $context['__severity__'] = $this->getSeverity();
+    if ($previous) {
+      $context['__rootMessage__'] = $this->_getRoot($previous)->getMessage();
+    }
+    $this->addContext($context);
+
+    $message = $this->_makeMessage($message, $code);
+
+    parent::__construct($message, $code, $previous);
 
     // exceptional exceptable: bad args
     if (! empty($args)) {
@@ -110,11 +116,6 @@ abstract class Exception extends BaseException implements Exceptable {
         ExceptableException::INVALID_CONSTRUCT_ARGS,
         ['args' => $arguments]
       );
-    }
-
-    parent::__construct($message, $code, $previous);
-    if ($previous) {
-      $this->addContext(['__rootMessage__' => $this->getRoot()->getMessage()]);
     }
   }
 
@@ -141,11 +142,7 @@ abstract class Exception extends BaseException implements Exceptable {
 
   /** @see Exceptable::getRoot() */
   public function getRoot() : Throwable {
-    $root = $this;
-    while ($root->getPrevious() !== null) {
-      $root = $root->getPrevious();
-    }
-    return $root;
+    return $this->_getRoot($this);
   }
 
   /** @see Exceptable::getSeverity() */
@@ -180,6 +177,20 @@ abstract class Exception extends BaseException implements Exceptable {
 
     $this->_severity = $severity;
     return $this;
+  }
+
+  /**
+   * Finds the root exception.
+   *
+   * @param Throwable $leaf The exception to start from
+   * @return Throwable The root exception
+   */
+  public function _getRoot(Throwable $leaf) : Throwable {
+    $root = $leaf;
+    while ($root->getPrevious() !== null) {
+      $root = $root->getPrevious();
+    }
+    return $root;
   }
 
   /**
