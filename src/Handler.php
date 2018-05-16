@@ -207,7 +207,7 @@ class Handler {
 
     $e = error_get_last();
     if ($e && $e['type'] === E_ERROR) {
-      $this->_error($e['type'], $e['message'], $e['file'], $e['line'], $e['context']);
+      $this->_error($e['type'], $e['message'], $e['file'], $e['line'], $e['context'] ?? []);
     }
 
     foreach ($this->_shutdownHandlers as $handler) {
@@ -244,8 +244,8 @@ class _Handler {
     } catch (Throwable $e) {
       throw new ExceptableException(
         ExceptableException::INVALID_HANDLER,
-        ['type' => $this->_type()],
-        $e
+        $e,
+        ['type' => $this->_type()]
       );
     }
   }
