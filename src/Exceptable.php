@@ -2,7 +2,7 @@
 /**
  * @package    at.exceptable
  * @author     Adrian <adrian@enspi.red>
- * @copyright  2014 - 2016
+ * @copyright  2014 - 2018
  * @license    GPL-3.0 (only)
  *
  *  This program is free software: you can redistribute it and/or modify it
@@ -32,17 +32,8 @@ use Throwable;
  *    exceptable::getSeverity() will need to be aliased when the trait is used.
  *  - implementations cannot extend from PDOException,
  *    because it breaks the Throwable interface (its getCode() returns a string).
- *
- * @method string    Throwable::__toString( void )
- * @method int       Throwable::getCode( void )
- * @method string    Throwable::getFile( void )
- * @method int       Throwable::getLine( void )
- * @method string    Throwable::getMessage( void )
- * @method Throwable Throwable::getPrevious( void )
- * @method array     Throwable::getTrace( void )
- * @method string    Throwable::getTraceAsString( void )
  */
-interface Exceptable extends \Throwable {
+interface Exceptable extends Throwable {
 
   /**
    * exception severity levels.
@@ -56,25 +47,13 @@ interface Exceptable extends \Throwable {
   const NOTICE = E_NOTICE;
 
   /**
-   * default info for unknown/generic exception cases.
-   *
-   * @type int   DEFAULT_CODE
-   * @type int   DEFAULT_MESSAGE
-   * @type int   DEFAULT_SEVERITY
-   */
-  const DEFAULT_CODE = 0;
-  const DEFAULT_MESSAGE = '';
-  const DEFAULT_SEVERITY = self::ERROR;
-
-  /**
    * gets information about a code known to the implementing class.
    *
-   * @param int $code             the exception code to look up
-   * @throws ExceptableException  if the code is not known to the implementation
-   * @return array                a map of info about the code,
-   *                              including (at a minimum) its "code", "severity", and "message".
+   * @param int $code    the exception code to look up
+   * @throws Exceptable  if the code is not known to the implementation
+   * @return array       a map of info about the error condition
    */
-  public static function get_info(int $code) : array;
+  public static function getInfo(int $code) : array;
 
   /**
    * checks whether the implementation has info about the given code.
@@ -82,26 +61,15 @@ interface Exceptable extends \Throwable {
    * @param int $code  the code to check
    * @return bool      true if the code is known; false otherwise
    */
-  public static function has_info(int $code) : bool;
+  public static function hasInfo(int $code) : bool;
 
   /**
-   * @param string    $0          exception message
-   *                              if omitted, a message must be set based on the exception code
-   * @param int       $1          exception code
-   *                              if omitted, a default code must be set
-   * @param Throwable $2          previous exception
-   * @param array     $3          additional exception context
-   * @throws ExceptableException  if argument(s) are invalid
+   * @param int       $code       exception code
+   * @param array     $context    additional exception context
+   * @param Throwable $previous   previous exception
+   * @throws ExceptableException  if code is invalid
    */
-  public function __construct(...$args);
-
-  /**
-   * adds contextual info to this exception.
-   *
-   * @param array $context  map of info to add
-   * @return $this
-   */
-  public function addContext(array $context) : Exceptable;
+  public function __construct(int $code, array $context = [], Throwable $previous = null);
 
   /**
    * gets contextual info about this exception.
@@ -115,7 +83,7 @@ interface Exceptable extends \Throwable {
    *
    * @return Throwable  the root exception
    */
-  public function getRoot() : \Throwable;
+  public function getRoot() : Throwable;
 
   /**
    * gets exception severity.
@@ -123,34 +91,4 @@ interface Exceptable extends \Throwable {
    * @return int  the exception severity
    */
   public function getSeverity() : int;
-
-  /**
-   * checks the exception severity.
-   *
-   * @return bool  true if exception severity is "Error"; false otherwise
-   */
-  public function isError() : bool;
-
-  /**
-   * checks the exception severity.
-   *
-   * @return bool  true if exception severity is "Warning"; false otherwise
-   */
-  public function isWarning() : bool;
-
-  /**
-   * checks the exception severity.
-   *
-   * @return bool  true if exception severity is "Notice"; false otherwise
-   */
-  public function isNotice() : bool;
-
-  /**
-   * adds contextual info to this exception.
-   *
-   * @param int $severity         one of Exceptable::ERROR|WARNING|NOTICE
-   * @throws ExceptableException  if severity is invalid
-   * @return $this
-   */
-  public function setSeverity(int $severity) : Exceptable;
 }
