@@ -186,23 +186,6 @@ class ExceptableTest extends TestCase {
       [[], new TypeError],
       [[99], new ExceptableException(ExceptableException::NO_SUCH_CODE, ['code' => 99])]
     ];
-
-    $tests = [];
-
-    // cool
-    foreach ([$code, null] as $b) {
-      $args[] = $b;
-      foreach ([$previous, null] as $c) {
-        $args[] = $c;
-        foreach ([$context, null] as $d) {
-          $args[] = $d;
-          $tests[] = [array_filter($args), null];
-          $args = null;
-        }
-      }
-    }
-
-    return $tests;
   }
 
   /**
