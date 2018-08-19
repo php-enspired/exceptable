@@ -49,7 +49,7 @@ trait HasContext {
   public function __construct(int $code, array $context = [], Throwable $previous = null) {
     $info = static::getInfo($code);
 
-    $context['__rootMessage__'] = $previous ? $previous->getMessage() : '';
+    $context['__rootMessage__'] = $previous ? $previous->getMessage() : null;
     $context['__severity__'] = $this->_severity = $info['severity'];
     $this->_context = $context;
 
@@ -91,7 +91,7 @@ trait HasContext {
    * generates an exception message using available context information.
    *
    * @param int $code     exception code
-   * @return string|null  a translated exception message on success; null otherwise
+   * @return string|null  an exception message on success; null otherwise
    */
   protected function _makeMessage(int $code) : ?string {
     $message = static::getInfo($code)['contextMessage'] ?? null;
