@@ -38,6 +38,9 @@ class Handler {
   /** @type bool  is this Handler currently registered (active)? */
   private $_registered = false;
 
+  /** @type bool  ignore error control? */
+  private $_scream = false;
+
   /** @type int  error types which should be thrown as ErrorExceptions. */
   private $_throw = 0;
 
@@ -162,7 +165,10 @@ class Handler {
       return false;
     }
 
-    if (($s & $this->_throw) === $s) {
+    if (
+      (($s & $this->_throw) === $s) &&
+      ($this->_scream || error_reporting() !== 0)
+    ) {
       throw new ErrorException($m, 0, $s, $f, $l);
     }
 
