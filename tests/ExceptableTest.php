@@ -109,8 +109,9 @@ class ExceptableTest extends TestCase {
    */
   public function testGetContext() {
     $context = ['foo' => 'foo'];
-    $this->assertEquals($context, $this->_getExceptable($context)->getContext());
-    $this->assertEquals($context, $this->_getExceptable()->addContext($context)->getContext());
+    $expected = ['foo' => 'foo', '__severity__' => 1];
+    $this->assertEquals($expected, $this->_getExceptable($context)->getContext());
+    $this->assertEquals($expected, $this->_getExceptable()->addContext($context)->getContext());
   }
 
   /**
@@ -187,7 +188,7 @@ class ExceptableTest extends TestCase {
    * @covers Exceptable::__toString()
    */
   public function testToString() {
-    $context = ['foo' => 'foo'];
+    $context = ['foo' => 'foo', '__severity__' => 1];
     $this->assertRegExp(
       "(\ncontext: "
         . json_encode($context, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT)
