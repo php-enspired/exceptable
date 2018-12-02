@@ -25,14 +25,14 @@ use Exception as BaseException;
 use at\exceptable\ {
   Exceptable,
   ExceptableException,
-  HasContext
+  IsExceptable
 };
 
 /**
  * convenience base class for Exceptables.
  */
 abstract class Exception extends BaseException implements Exceptable {
-  use HasContext;
+  use IsExceptable;
 
   /**
    * @type array INFO {

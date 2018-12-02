@@ -27,7 +27,7 @@ use Throwable;
  *
  * this trait MUST be used by a class which implements Throwable.
  */
-trait HasContext {
+trait IsExceptable {
 
   /**
    * @type int    $_severity  the exception severity
