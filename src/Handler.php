@@ -22,6 +22,7 @@ namespace at\exceptable;
 
 use ErrorException,
     Throwable;
+
 use at\exceptable\Exceptable;
 
 class Handler {
@@ -44,9 +45,9 @@ class Handler {
   /**
    * registers this handler to invoke a callback, and then restores the previous handler(s).
    *
-   * @param callable $callback    the callback to execute
-   * @param mixed    …$arguments  arguments to pass to the callback
-   * @return mixed                the value returned from the callback
+   * @param callable $callback   the callback to execute
+   * @param mixed ...$arguments  arguments to pass to the callback
+   * @return mixed               the value returned from the callback
    */
   public function during(callable $callback, ...$arguments) {
     $registered = $this->_registered;
@@ -68,7 +69,7 @@ class Handler {
    * @see <http://php.net/set_error_handler> $error_handler
    *
    * @param callable $handler  the error handler to add
-   * @param int      $types    the error type(s) to trigger this handler
+   * @param int|null $types    the error type(s) to trigger this handler
    *                           (bitmask of E_* constants, or omit for "any severity")
    * @return Handler           $this
    */
@@ -82,7 +83,7 @@ class Handler {
    * @see <http://php.net/set_exception_handler> $exception_handler
    *
    * @param callable $handler   the exception handler to add
-   * @param int      $severity  the exception severity to trigger this handler
+   * @param int|null $severity  the exception severity to trigger this handler
    *                            (one of Exceptable::ERROR|WARNING|NOTICE, or omit for "any severity")
    * @return Handler            $this
    */
@@ -96,7 +97,7 @@ class Handler {
    * @see <http:/php.net/register_shutdown_handler> $callback
    *
    * @param callable $handler    the shutdown handler to add
-   * @param mixed    $arguments  optional agrs to pass to shutdown handler when invoked
+   * @param mixed ...$arguments  optional agrs to pass to shutdown handler when invoked
    * @return Handler             $this
    */
   public function onShutdown(callable $handler, ...$arguments) : Handler {
@@ -135,7 +136,7 @@ class Handler {
    * tries invoking a callback, handling any exceptions using registered handlers.
    *
    * @param callable $callback    the callback to execute
-   * @param mixed    …$arguments  arguments to pass to the callback
+   * @param mixed ...$arguments   arguments to pass to the callback
    * @throws ExceptableException  if no registered handler handles the exception
    * @return mixed                the value returned from the callback
    */
@@ -191,7 +192,7 @@ class Handler {
    * @throws ExceptableException  if no registered handler handles the exception
    */
   protected function _exception(Throwable $e) {
-    $severity = method_exists($e, 'getSeverity') ? $e->getSeverity() : Exceptable::ERROR;
+    $severity = $e instanceof Exceptable ? $e->getSeverity() : Exceptable::ERROR;
     foreach ($this->_exceptionHandlers as $handler) {
       if ($handler->handles(_Handler::TYPE_EXCEPTION, $severity) && $handler->handle($e)) {
         return;
@@ -250,8 +251,8 @@ class _Handler {
     } catch (Throwable $e) {
       throw new ExceptableException(
         ExceptableException::INVALID_HANDLER,
-        $e,
-        ['type' => $this->_type()]
+        ['type' => $this->_type()],
+        $e
       );
     }
   }

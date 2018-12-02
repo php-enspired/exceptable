@@ -22,6 +22,8 @@ namespace at\exceptable;
 
 use Throwable;
 
+use at\exceptable\ExceptableException;
+
 /**
  * augmented interface for exceptions.
  *
@@ -49,9 +51,9 @@ interface Exceptable extends Throwable {
   /**
    * gets information about a code known to the implementing class.
    *
-   * @param int $code    the exception code to look up
-   * @throws Exceptable  if the code is not known to the implementation
-   * @return array       a map of info about the error condition
+   * @param int $code             the exception code to look up
+   * @throws ExceptableException  if the code is not known to the implementation
+   * @return array                a map of info about the error condition
    */
   public static function getInfo(int $code) : array;
 
@@ -64,10 +66,10 @@ interface Exceptable extends Throwable {
   public static function hasInfo(int $code) : bool;
 
   /**
-   * @param int       $code       exception code
-   * @param array     $context    additional exception context
-   * @param Throwable $previous   previous exception
-   * @throws ExceptableException  if code is invalid
+   * @param int            $code       exception code
+   * @param array          $context    additional exception context
+   * @param Throwable|null $previous   previous exception
+   * @throws ExceptableException       if code is invalid
    */
   public function __construct(int $code, array $context = [], Throwable $previous = null);
 

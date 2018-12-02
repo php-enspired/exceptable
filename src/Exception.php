@@ -20,8 +20,7 @@ declare(strict_types = 1);
 
 namespace at\exceptable;
 
-use Exception as BaseException,
-  Throwable;
+use Exception as BaseException;
 
 use at\exceptable\ {
   Exceptable,

@@ -22,13 +22,10 @@ namespace at\exceptable;
 
 use Throwable;
 
-use at\exceptable\ {
-  Exceptable,
-  ExceptableException
-};
-
 /**
  * base implementation for Exceptable interface, including contexted message construction.
+ *
+ * this trait MUST be used by a class which implements Throwable.
  */
 trait HasContext {
 
@@ -42,6 +39,9 @@ trait HasContext {
   /** {@inheritDoc} */
   abstract public static function getInfo(int $code) : array;
 
+  /** @see https://php.net/Throwable.getPrevious */
+  abstract public function getPrevious();
+
   /** {@inheritDoc} */
   abstract public static function hasInfo(int $code) : bool;
 
@@ -53,17 +53,20 @@ trait HasContext {
     $context['__severity__'] = $this->_severity = $info['severity'];
     $this->_context = $context;
 
+    // @phan-suppress-next-line PhanTraitParentReference
     parent::__construct($this->_makeMessage($code) ?? $info['message'], $code, $previous);
   }
 
   /** @see https://php.net/__toString */
   public function __toString() {
     try {
+      // @phan-suppress-next-line PhanTraitParentReference
       return parent::__toString() . "\ncontext: " . json_encode(
         $this->getContext(),
         JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT
       );
     } catch (Throwable $e) {
+      // @phan-suppress-next-line PhanTraitParentReference
       return parent::__toString();
     }
   }
