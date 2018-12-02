@@ -21,10 +21,15 @@ declare(strict_types = 1);
 namespace at\exceptable\tests;
 
 use ErrorException,
-    Throwable;
-use at\exceptable\Handler;
+  Throwable;
+
+use at\exceptable\ {
+  ExceptableException,
+  Handler
+};
+
 use PHPUnit_Framework_Error as PHPError,
-    PHPUnit\Framework\TestCase;
+  PHPUnit\Framework\TestCase;
 
 /**
  * tests Handler.
@@ -85,6 +90,29 @@ class HandlerTest extends TestCase {
    */
   public function testThrow() {
     $this->markTestIncomplete();
+  }
+
+  /**
+   * @covers Handler::try
+   */
+  public function testTry() {
+    $this->assertEquals(
+      [1, 2],
+      (new Handler)->try(function (...$args) { return $args; }, 1, 2),
+      'invokes callback with given arguments and returns return value'
+    );
+
+    $throws = function () { throw new Exception; };
+
+    $this->assertNull(
+      (new Handler)->onException(function ($e) { return true; })->try($throws),
+      'catches and handles exceptions thrown from callback'
+    );
+
+    // throws when no registered handler resolves callback's exception
+    $this->expectException(ExceptableException::class);
+    $this->expectExceptionCode(ExceptableException::UNCAUGHT_EXCEPTION);
+    (new Handler)->try($throws);
   }
 
   /**
