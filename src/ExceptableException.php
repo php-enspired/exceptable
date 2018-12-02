@@ -35,12 +35,12 @@ class ExceptableException extends Exception {
    * @type int UNCAUGHT_EXCEPTION  uncaught/unhandled exception during runtime
    * @type int INVALID_HANDLER     invalid handler (e.g., wrong signature, or throws)
    */
-  const NO_SUCH_CODE = 1;
-  const UNCAUGHT_EXCEPTION = 2;
-  const INVALID_HANDLER = 3;
+  public const NO_SUCH_CODE = 1;
+  public const UNCAUGHT_EXCEPTION = 2;
+  public const INVALID_HANDLER = 3;
 
   /** @see Exceptable::INFO */
-  const INFO = [
+  public const INFO = [
     self::NO_SUCH_CODE => [
       'message' => 'no such code',
       'severity' => Exceptable::WARNING,

@@ -46,7 +46,7 @@ abstract class Exception extends BaseException implements Exceptable {
    *    ...
    *  }
    */
-  const INFO = [];
+  public const INFO = [];
 
   /** {@inheritDoc} */
   public static function getInfo(int $code) : array {

@@ -219,11 +219,11 @@ class Handler {
 /** @internal  utility class for wrapping callables as error/exception/shutdown handlers. */
 class _Handler {
 
-  const TYPE_ERROR = 1;
-  const TYPE_EXCEPTION = 2;
-  const TYPE_SHUTDOWN = 3;
+  public const TYPE_ERROR = 1;
+  public const TYPE_EXCEPTION = 2;
+  public const TYPE_SHUTDOWN = 3;
 
-  const ANY_SEVERITY = -1;
+  public const ANY_SEVERITY = -1;
 
   protected $_arguments = [];
 

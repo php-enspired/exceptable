@@ -42,9 +42,9 @@ interface Exceptable extends Throwable {
    * @type int WARNING  warning
    * @type int NOTICE   notice
    */
-  const ERROR = E_ERROR;
-  const WARNING = E_WARNING;
-  const NOTICE = E_NOTICE;
+  public const ERROR = E_ERROR;
+  public const WARNING = E_WARNING;
+  public const NOTICE = E_NOTICE;
 
   /**
    * gets information about a code known to the implementing class.
