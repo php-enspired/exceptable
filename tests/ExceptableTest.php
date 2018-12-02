@@ -49,8 +49,7 @@ class ExceptableTest extends TestCase {
       $this->assertEquals($code, $actual['code']);
       $this->assertContains(
         $actual['severity'],
-        [Exceptable::ERROR, Exceptable::WARNING, Exceptable::NOTICE],
-        true
+        [Exceptable::ERROR, Exceptable::WARNING, Exceptable::NOTICE]
       );
       $this->assertInternalType('string', $actual['message']);
     }

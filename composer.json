@@ -18,7 +18,8 @@
     "php": "^7.1"
   },
   "require-dev": {
-    "phpunit/phpunit": "^5.7"
+    "phan/phan": "^1",
+    "phpunit/phpunit": "^7"
   },
   "autoload": {
     "psr-4": {
@@ -26,6 +27,7 @@
     }
   },
   "scripts": {
-    "test:unit" : "vendor/bin/phpunit --bootstrap vendor/autoload.php tests"
+    "test:phan": "vendor/bin/phan",
+    "test:unit" : "vendor/bin/phpunit tests"
   }
 }
