@@ -1,4 +1,4 @@
-![](https://img.shields.io/github/release/php-enspired/exceptable.svg)  ![](https://img.shields.io/badge/PHP-7.0-blue.svg?colorB=8892BF)  ![](https://img.shields.io/badge/license-GPL_3.0_only-blue.svg)
+![](https://img.shields.io/github/release/php-enspired/exceptable.svg)  ![](https://img.shields.io/badge/PHP-7.1-blue.svg?colorB=8892BF)  ![](https://img.shields.io/badge/license-GPL_3.0_only-blue.svg)
 
 how exceptable!
 ===============
@@ -8,7 +8,7 @@ _Exceptables_ make exceptions exceptional.  Exceptables provide some nice utilit
 dependencies
 ------------
 
-Requires php 7.0 or later.
+Requires php 7.1 or later.
 
 installation
 ------------
@@ -55,6 +55,9 @@ see more in [the wiki](https://github.com/php-enspired/exceptable/wiki).
 
 docs
 ----
+
+**Note**, version 2.0 requires PHP 7.1 or greater, and also introduces a number of changes from the version 1 api.
+[Read more](https://github.com/php-enspired/exceptable/wiki/new-in-2.0).
 
 - API:
   - [The Exceptable Interface](https://github.com/php-enspired/exceptable/wiki/API:-The-Exceptable-Interface)
