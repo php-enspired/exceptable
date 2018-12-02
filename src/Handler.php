@@ -39,6 +39,9 @@ class Handler {
   /** @type bool  is this Handler currently registered (active)? */
   private $_registered = false;
 
+  /** @type bool  ignore error control? */
+  private $_scream = false;
+
   /** @type int  error types which should be thrown as ErrorExceptions. */
   private $_throw = 0;
 

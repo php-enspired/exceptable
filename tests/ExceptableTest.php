@@ -154,7 +154,7 @@ class ExceptableTest extends TestCase {
    * @covers Exceptable::__toString()
    */
   public function testToString() {
-    $context = ['foo' => 'foo'];
+    $context = ['foo' => 'foo', '__severity__' => 1];
     $this->assertRegExp(
       "(\ncontext: " .
         json_encode(
