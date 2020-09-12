@@ -1,0 +1,9 @@
+root {
+  exceptable {
+    exceptableexception {
+      invalid_handler { "Invalid handler [{type}]: {__rootMessage__}" }
+      no_such_code { "No exception code '{code}' is known" }
+      uncaught_exception { "No registered handler caught exception: {__rootMessage__}" }
+    }
+  }
+}

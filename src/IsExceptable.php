@@ -2,7 +2,7 @@
 /**
  * @package    at.exceptable
  * @author     Adrian <adrian@enspi.red>
- * @copyright  2014 - 2018
+ * @copyright  2014 - 2020
  * @license    GPL-3.0 (only)
  *
  *  This program is free software: you can redistribute it and/or modify it
@@ -20,103 +20,191 @@ declare(strict_types = 1);
 
 namespace at\exceptable;
 
-use Throwable;
+use MessageFormatter,
+  ResourceBundle,
+  Throwable;
+
+use at\exceptable\ {
+  Exceptable
+};
 
 /**
- * base implementation for Exceptable interface, including contexted message construction.
+ * Base implementation for Exceptable interface, including contexted message construction.
+ * This trait MUST be used by a class which extends from Exception and implements Exceptable.
  *
- * this trait MUST be used by a class which implements Throwable.
+ * @phan-file-suppress PhanUndeclaredConstantOfClass
+ *  const INFO is expected to be defined by implementations; all usage here checks first.
  */
 trait IsExceptable {
 
+  protected static $locale;
+  protected static $messages;
+
   /**
-   * @type int    $_severity  the exception severity
-   * @type array  $_context   additional exception context
+   * Factory: creates a new Exceptable from the given error code,
+   * and adjusts exception info to reflect the location of the calling code.
+   *
+   * @phan-suppress PhanTypeInstantiateTraitStaticOrSelf
+   *
+   * @see Exceptable::__construct()
+   * @return Exceptable
    */
-  protected $_severity;
-  protected $_context = [];
+  public static function create(int $code, array $context = [], Throwable $previous = null) : Exceptable {
+    $exceptable = new static($code, $context, $previous);
 
-  /** {@inheritDoc} */
-  abstract public static function getInfo(int $code) : array;
+    $frame = $exceptable->getTrace()[0];
+    $exceptable->file = $frame["file"];
+    $exceptable->line = $frame["line"];
 
-  /** @see https://php.net/Throwable.getPrevious */
-  abstract public function getPrevious();
-
-  /** {@inheritDoc} */
-  abstract public static function hasInfo(int $code) : bool;
-
-  /** {@inheritDoc} */
-  public function __construct(int $code, array $context = [], Throwable $previous = null) {
-    $info = static::getInfo($code);
-
-    $context['__rootMessage__'] = $previous ? $previous->getMessage() : '';
-    $context['__severity__'] = $this->_severity = $info['severity'];
-    $this->_context = $context;
-
-    // @phan-suppress-next-line PhanTraitParentReference
-    parent::__construct($this->_makeMessage($code) ?? $info['message'], $code, $previous);
+    assert($exceptable instanceof Exceptable);
+    return $exceptable;
   }
 
-  /** @see https://php.net/__toString */
-  public function __toString() {
-    try {
-      // @phan-suppress-next-line PhanTraitParentReference
-      return parent::__toString() . "\ncontext: " . json_encode(
-        $this->getContext(),
-        JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT
-      );
-    } catch (Throwable $e) {
-      // @phan-suppress-next-line PhanTraitParentReference
-      return parent::__toString();
+  /** @see Exceptable::getInfo() */
+  public static function getInfo(int $code) : array {
+    if (! static::hasInfo($code)) {
+      throw ExceptableException::create(ExceptableException::NO_SUCH_CODE, ['code' => $code]);
     }
+
+    return ["code" => $code] +
+      static::INFO[$code] +
+      ["format" => static::INFO[$code]["message"]];
   }
 
-  /** {@inheritDoc} */
+  /** @see Exceptable::hasInfo() */
+  public static function hasInfo(int $code) : bool {
+    return defined("static::INFO") &&
+      isset(static::INFO[$code]["message"]) &&
+      is_string(static::INFO[$code]["message"]);
+  }
+
+  /** @see Exceptable::localize() */
+  public static function localize(string $locale, ResourceBundle $messages) : void {
+    static::$locale = $locale;
+    static::$messages = $messages;
+  }
+
+  /**
+   * @see https://php.net/class.Exception
+   *
+   * @var int    $code
+   * @var string $file
+   * @var int    $line
+   * @var string $message
+   */
+  protected $code;
+  protected $file;
+  protected $line;
+  protected $message;
+
+  /** @var array Contextual information. */
+  protected $context = [];
+
+  /** @see Exceptable::__construct() */
+  public function __construct(int $code, array $context = [], Throwable $previous = null) {
+    $this->context = $context;
+    // @phan-suppress-next-line PhanTraitParentReference
+    parent::__construct($this->makeMessage($code), $code, $previous);
+    $this->context["__rootMessage__"] = $this->getRoot()->getMessage();
+  }
+
+  /** @see Exceptable::getContext() */
   public function getContext() : array {
-    return $this->_context;
+    return $this->context;
   }
 
-  /** {@inheritDoc} */
+  /** @see Exceptable::getRoot() */
   public function getRoot() : Throwable {
     $root = $this;
     while (($previous = $root->getPrevious()) !== null) {
       $root = $previous;
     }
+
     return $root;
   }
 
-  /** {@inheritDoc} */
-  public function getSeverity() : int {
-    return $this->_severity;
-  }
-
   /**
-   * generates an exception message using available context information.
+   * Looks up a message format by key, if a messages bundle is available.
    *
-   * @param int $code     exception code
-   * @return string|null  a translated exception message on success; null otherwise
+   * @param string|null $key Dot-delimited key path
+   * @return string|null Message format on success; null otherwise
    */
-  protected function _makeMessage(int $code) : ?string {
-    $message = static::getInfo($code)['contextMessage'] ?? null;
-    if ($message === null) {
+  protected function getMessageFormat(?string $key) : ?string {
+    if (! isset($key, static::$messages)) {
       return null;
     }
 
-    $context = $this->getContext();
+    $message = static::$messages;
+    foreach (explode(".", $key) as $next) {
+      if ($message instanceof ResourceBundle) {
+        $message = $message->get($next);
+        continue;
+      }
 
-    preg_match_all('(\{(\w+)\})', $message, $matches);
+      return null;
+    }
+
+    return is_scalar($message) ? (string) $message : null;
+  }
+
+  /**
+   * Builds the exception message based on error code.
+   *
+   * @param int $code Error code
+   * @return string
+   */
+  protected function makeMessage(int $code) : string {
+    $info = static::getInfo($code);
+
+    $format = $this->getMessageFormat($info["formatKey"]) ?? $info["format"];
+    if (extension_loaded('intl')) {
+      return MessageFormatter::formatMessage(static::$locale, $format, $this->context) ?:
+        $info["message"];
+    }
+
+    return $this->substituteMessage($format) ?? $info["message"];
+  }
+
+  /**
+   * Fallback message formatter used if Intl is not installed.
+   * Supports simple value substitution only.
+   *
+   * @param string $format Message format string
+   * @return string|null Formatted message on success; null otherwise
+   */
+  protected function substituteMessage(string $format) : ?string {
+    preg_match_all("(\{(\w+)\})u", $format, $matches);
     $placeholders = $matches[1];
     $replacements = [];
     foreach ($placeholders as $placeholder) {
-      if (! isset($context[$placeholder])) {
+      if (! isset($this->context[$placeholder]) || ! is_scalar($this->context[$placeholder])) {
         return null;
       }
-      $replacement = is_scalar($context[$placeholder]) ?
-        $context[$placeholder] :
-        json_encode($context[$placeholder], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-      $replacements["{{$placeholder}}"] = $replacement;
+
+      $replacements["{{$placeholder}}"] = $this->context[$placeholder];
     }
 
-    return strtr($message, $replacements);
+    return strtr($format, $replacements);
   }
+
+  /** @see https://php.net/Throwable.getCode */
+  abstract public function getCode() : int;
+
+  /** @see https://php.net/Throwable.getFile */
+  abstract public function getFile() : string;
+
+  /** @see https://php.net/Throwable.getLine */
+  abstract public function getLine() : int;
+
+  /** @see https://php.net/Throwable.getMessage */
+  abstract public function getMessage() : string;
+
+  /** @see https://php.net/Throwable.getPrevious */
+  abstract public function getPrevious() : Throwable;
+
+  /** @see https://php.net/Throwable.getTrace */
+  abstract public function getTrace() : array;
+
+  /** @see https://php.net/Throwable.getTraceasString */
+  abstract public function getTraceAsString() : string;
 }

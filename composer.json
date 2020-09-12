@@ -15,11 +15,14 @@
     "irc": "irc://irc.freenode.net/php-enspired"
   },
   "require": {
-    "php": "^7.1"
+    "php": "^7.3"
+  },
+  "suggest": {
+    "ext-intl": "Adds support for localization and ICU message formatting."
   },
   "require-dev": {
-    "phan/phan": "^1",
-    "phpunit/phpunit": "^7"
+    "phan/phan": "^3",
+    "phpunit/phpunit": "^9"
   },
   "autoload": {
     "psr-4": {
