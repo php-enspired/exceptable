@@ -1,14 +1,18 @@
-![](https://img.shields.io/github/release/php-enspired/exceptable.svg)  ![](https://img.shields.io/badge/PHP-7.1-blue.svg?colorB=8892BF)  ![](https://img.shields.io/badge/license-GPL_3.0_only-blue.svg)
+![](https://img.shields.io/github/release/php-enspired/exceptable.svg)  ![](https://img.shields.io/badge/PHP-7.3-blue.svg?colorB=8892BF)  ![](https://img.shields.io/badge/license-GPL_3.0_only-blue.svg)
 
 how exceptable!
 ===============
 
-_Exceptables_ make exceptions exceptional.  Exceptables provide some nice utility methods, but the main benefit is having a way to conveniently and quickly organize all the error cases in your application.  Exceptables are easy to create and pass details to.  They provide access to error info for both humans and code.  Exceptables make it easy to extend, add, and maintain error handling code as your application grows.
+_Exceptables_ make exceptions exceptional.  Exceptables provide some nice utility methods, but the main benefit is having a way to conveniently and quickly organize all the error cases in your application.
+
+Exceptables are easy to create and pass details to, they provide access to error info for both humans and code, and make it easy to extend, add, and maintain error handling code as your application grows.
 
 dependencies
 ------------
 
-Requires php 7.1 or later.
+Requires php 7.3 or later.
+
+ICU support requires the `intl` extension.
 
 installation
 ------------
@@ -31,7 +35,7 @@ class FooException extends Exceptable {
   const INFO = [
     self::UNKNOWN_FOO => [
       'message' => 'unknown foo',
-      'tr_message' => "i don't know who, you think is foo, but it's not {foo}"
+      'format' => "i don't know who, you think is foo, but it's not {foo}"
     ]
   ];
 }
@@ -53,15 +57,25 @@ throw new FooException(FooException::UNKNOWN_FOO, $context);
 
 see more in [the wiki](https://github.com/php-enspired/exceptable/wiki).
 
+Version 3.0 will reach End-of-Life on November 30, 2020.
+--------------------------------------------------------
+
 docs
 ----
 
-**Note**, version 2.0 requires PHP 7.1 or greater, and also introduces a number of changes from the version 1 api.
-[Read more](https://github.com/php-enspired/exceptable/wiki/new-in-2.0).
+**Version 3.0** requires PHP 7.3 or greater and introduces some exciting changes from version 2:
+- Support* for ICU locales, message formats, and resource bundles!\
+  \* _requires the intl extension._
+- Ready-to-extend (or just use) `Exceptable` classes based on the built-in SPL Exception classes!
+- The generic `Exceptable` Exception base class has been removed.
+- Introduces a "debug mode" for Handlers!
+- Handlers are now Logger (e.g., Monolog)-aware!
+
+[Read more about the 3.0 release](https://github.com/php-enspired/exceptable/wiki/new-in-3.0).
 
 - API:
   - [The Exceptable Interface](https://github.com/php-enspired/exceptable/wiki/API:-The-Exceptable-Interface)
-  - [The Exception Class](https://github.com/php-enspired/exceptable/wiki/API:-The-Exception-Class)
+  - [SPL Exception Classes](https://github.com/php-enspired/exceptable/wiki/API:-SPL-Exception-Classes)
   - [The Handler Class](https://github.com/php-enspired/exceptable/wiki/API:-The-Handler-Class)
   - [The ExceptableException Class](https://github.com/php-enspired/exceptable/wiki/API:-The-ExceptableException-Class)
 - [Basic Exceptable Usage](https://github.com/php-enspired/exceptable/wiki/Usage:-Exceptables)

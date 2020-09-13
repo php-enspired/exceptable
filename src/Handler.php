@@ -21,39 +21,78 @@ declare(strict_types = 1);
 namespace at\exceptable;
 
 use ErrorException,
-    Throwable;
+  Throwable;
 
-use at\exceptable\Exceptable;
+use at\exceptable\ExceptableException;
 
-class Handler {
+use Psr\Log\ {
+  LoggerAwareInterface as LoggerAware,
+  LoggerInterface as Logger,
+  LogLevel
+};
 
-  /** @type _Handler[]  list of registered error handlers. */
-  private $_errorHandlers = [];
+/**
+ *
+ */
+class Handler implements LoggerAware {
 
-  /** @type _Handler[]  list of registered exception handlers. */
-  private $_exceptionHandlers = [];
+  /** @var bool Debug mode? */
+  protected $debug = false;
 
-  /** @type _Handler[]  list of registered shutdown handlers. */
-  private $_shutdownHandlers = [];
+  /** @var array[] List of registered error handlers, grouped by error type. */
+  protected $errorHandlers = [];
 
-  /** @type bool  is this Handler currently registered (active)? */
-  private $_registered = false;
+  /** @var array[] List of errors/exceptions encountered in debug mode. */
+  protected $errors = [];
 
-  /** @type bool  ignore error control? */
-  private $_scream = false;
+  /** @var callable[] List of registered exception handlers, indexed by Throwable FQCN to catch. */
+  protected $exceptionHandlers = [];
 
-  /** @type int  error types which should be thrown as ErrorExceptions. */
-  private $_throw = 0;
+  /** @var Logger Logging mechanism. */
+  protected $logger;
+
+  /** @var callable[] List of registered shutdown handlers. */
+  protected $shutdownHandlers = [];
+
+  /** @var bool Is this Handler currently registered (active)? */
+  protected $registered = false;
+
+  /** @var bool Ignore the error control operator? */
+  protected $scream = false;
+
+  /** @var int Error types which should be thrown as ErrorExceptions. */
+  protected $throw = 0;
 
   /**
-   * registers this handler to invoke a callback, and then restores the previous handler(s).
+   * Sets debug mode (tracks and traces all errors and exceptions).
    *
-   * @param callable $callback   the callback to execute
-   * @param mixed ...$arguments  arguments to pass to the callback
-   * @return mixed               the value returned from the callback
+   * @param bool $debug  Debug?
+   * @return Handler     $this
    */
-  public function during(callable $callback, ...$arguments) {
-    $registered = $this->_registered;
+  public function debug(bool $debug = true) : Handler {
+    $this->debug = $debug;
+
+    return $this;
+  }
+
+  /**
+   * Gets a list of errors/exceptions encountered while debug mode was active.
+   *
+   * @return array[]
+   */
+  public function getDebugLog() : array {
+    return $this->errors;
+  }
+
+  /**
+   * Registers this handler to invoke a callback, and then restores the previous handler(s).
+   *
+   * @param callable $callback  The callback to execute
+   * @param mixed ...$arguments Arguments to pass to the callback
+   * @return mixed              The value returned from the callback
+   */
+  public function handle(callable $callback, ...$arguments) {
+    $registered = $this->registered;
     if (! $registered) {
       $this->register();
     }
@@ -68,221 +107,313 @@ class Handler {
   }
 
   /**
-   * adds an error handler.
+   * Adds an error handler.
    * @see <http://php.net/set_error_handler> $error_handler
    *
-   * @param callable $handler  the error handler to add
-   * @param int|null $types    the error type(s) to trigger this handler
-   *                           (bitmask of E_* constants, or omit for "any severity")
-   * @return Handler           $this
+   * @param callable $handler The error handler to add
+   * @param int      $types   The error type(s) to trigger this handler
+   *                           (bitmask of E_* constants)
+   * @return Handler          $this
    */
-  public function onError(callable $handler, int $types=null) : Handler {
-    $this->_errorHandlers[] = new _Handler($handler, _Handler::TYPE_ERROR, $types);
+  public function onError(callable $handler, int $types) : Handler {
+    $this->errorHandlers[$types][] = $handler;
+
     return $this;
   }
 
   /**
-   * adds an exception handler.
+   * Adds an exception handler.
    * @see <http://php.net/set_exception_handler> $exception_handler
    *
-   * @param callable $handler   the exception handler to add
-   * @param int|null $severity  the exception severity to trigger this handler
-   *                            (one of Exceptable::ERROR|WARNING|NOTICE, or omit for "any severity")
-   * @return Handler            $this
+   * @param callable $handler The exception handler to add
+   * @param string[] $catches List of FQCN(s) this handler should handle (defaults to any)
+   * @return Handler          $this
    */
-  public function onException(callable $handler, int $severity=null) : Handler {
-    $this->_exceptionHandlers[] = new _Handler($handler, _Handler::TYPE_EXCEPTION, $severity);
+  public function onException(callable $handler, array $catches = [Throwable::class]) : Handler {
+    foreach ($catches as $catch) {
+      $this->exceptionHandlers[$catch] = $handler;
+    }
+
     return $this;
   }
 
   /**
-   * adds a shutdown handler.
+   * Adds a shutdown handler.
    * @see <http:/php.net/register_shutdown_handler> $callback
    *
-   * @param callable $handler    the shutdown handler to add
-   * @param mixed ...$arguments  optional agrs to pass to shutdown handler when invoked
-   * @return Handler             $this
+   * @param callable $handler   The shutdown handler to add
+   * @param mixed ...$arguments Optional agrs to pass to shutdown handler when invoked
+   * @return Handler            $this
    */
   public function onShutdown(callable $handler, ...$arguments) : Handler {
-    $this->_shutdownHandlers[] = (new _Handler($handler, _Handler::TYPE_SHUTDOWN))
-      ->defaultArguments($arguments);
+    $this->shutdownHandlers[] = [$handler, $arguments];
+
     return $this;
   }
 
   /**
-   * registers this Handler's error, exception, and shutdown handlers.
+   * Registers this Handler's error, exception, and shutdown handlers.
    *
-   * @return Handler  $this
+   * @return Handler $this
    */
   public function register() : Handler {
-    set_error_handler([$this, '_error']);
-    set_exception_handler([$this, '_exception']);
-    register_shutdown_function([$this, '_shutdown']);
-    $this->_registered = true;
+    set_error_handler([$this, 'handleError'], -1);
+    set_exception_handler([$this, 'handleException']);
+    register_shutdown_function([$this, 'handleShutdown']);
+    $this->registered = true;
 
     return $this;
   }
 
   /**
-   * sets error types which should be thrown as ErrorExceptions.
+   * Sets whether the error control operator should be ignored.
    *
-   * @param int $types  the error types to be thrown
-   *                    (defaults to E_ERROR|E_WARNING; use 0 to stop throwing)
-   * @return Handler    $this
+   * @param bool $scream Ignore the error control operator?
+   * @return Handler $this
    */
-  public function throw(int $types=E_ERROR|E_WARNING) : Handler {
-    $this->_throw = $types;
+  public function scream(bool $scream) : Handler {
+    $this->scream = $scream;
+
+    return $this;
+  }
+
+  /** @see https://www.php-fig.org/psr/psr-3/#4-psrlogloggerawareinterface */
+  public function setLogger(Logger $logger) : void {
+    $this->logger = $logger;
+  }
+
+  /**
+   * Sets error types which should be thrown as ErrorExceptions.
+   *
+   * @param int $types The error types to be thrown
+   *                    (defaults to E_ERROR|E_WARNING; use 0 to stop throwing)
+   * @return Handler   $this
+   */
+  public function throwErrors(int $types=E_ERROR|E_WARNING) : Handler {
+    $this->throw = $types;
+
     return $this;
   }
 
   /**
-   * tries invoking a callback, handling any exceptions using registered handlers.
+   * Invokes a callback and handles any exceptions using registered handlers.
    *
-   * @param callable $callback    the callback to execute
-   * @param mixed ...$arguments   arguments to pass to the callback
-   * @throws ExceptableException  if no registered handler handles the exception
-   * @return mixed                the value returned from the callback
+   * @param callable $callback   The callback to execute
+   * @param mixed ...$arguments  Arguments to pass to the callback
+   * @throws ExceptableException If no registered handler handles the exception
+   * @return mixed               The value returned from the callback on success; null otherwise
    */
   public function try(callable $callback, ...$arguments) {
     try {
       return $callback(...$arguments);
     } catch (Throwable $e) {
-      $this->_exception($e);
+      $this->handleException($e);
+      return null;
     }
   }
 
   /**
-   * un-registers this Handler.
+   * Un-registers this Handler.
    *
-   * @return Handler  $this
+   * @return Handler $this
    */
   public function unregister() : Handler {
     restore_error_handler();
     restore_exception_handler();
     // shutdown functions can't be unregistered; just have to flag them so they're non-ops  :(
-    $this->_registered = false;
+    $this->registered = false;
+
     return $this;
   }
 
   /**
-   * handles php errors.
+   * Determines target logging level for a given error code.
    *
-   * @param int    $s        error severity
-   * @param string $m        error message
-   * @param string $f        error file
-   * @param int    $l        error line
-   * @param array  $c        error context
-   * @throws ErrorException  if error severity matches $_throw setting
-   * @return bool            true if error handled; false if php's error handler should continue
+   * @param int $code Error code
+   * @return string One of the LogLevel::* constants
    */
-  protected function _error(int $s, string $m, string $f, int $l, array $c) : bool {
-    if (($s & $this->_throw) === $s) {
-      throw new ErrorException($m, 0, $s, $f, $l);
+  protected function getLogLevel(int $code) : string {
+    return [
+      E_ERROR => LogLevel::CRITICAL,
+      E_USER_ERROR => LogLevel::CRITICAL,
+      E_WARNING => LogLevel::WARNING,
+      E_USER_WARNING => LogLevel::WARNING,
+      E_PARSE => LogLevel::ERROR,
+      E_NOTICE => LogLevel::NOTICE,
+      E_USER_NOTICE => LogLevel::NOTICE,
+      E_STRICT => LogLevel::DEBUG,
+      E_RECOVERABLE_ERROR => LogLevel::CRITICAL,
+      E_DEPRECATED => LogLevel::INFO,
+      E_USER_DEPRECATED => LogLevel::INFO
+    ][$code] ?? LogLevel::NOTICE;
+  }
+
+  /**
+   * Handles php errors.
+   *
+   * @param int    $c       Error code
+   * @param string $m       Error message
+   * @param string $f       Error file
+   * @param int    $l       Error line
+   * @throws ErrorException If error severity matches $_throw setting
+   * @return bool           True if error handled; false if php's error handler should continue
+   */
+  protected function handleError(int $c, string $m, string $f, int $l) : bool {
+    $error = [
+      "code" => $c,
+      "message" => $m,
+      "file" => $f,
+      "line" => $l
+    ];
+
+    if (! $this->scream && error_reporting() === 0) {
+      $this->logError(true, $error);
+      return true;
     }
 
-    foreach ($this->_errorHandlers as $handler) {
-      if ($handler->handles(_Handler::TYPE_ERROR, $s) && $handler->handle($s, $m, $f, $l, $c)) {
-        return true;
+    if (($c & $this->throw) === $c) {
+      throw new ErrorException($m, 0, $c, $f, $l);
+    }
+
+    foreach ($this->errorHandlers as $severity => $handlers) {
+      // @todo i think this is a bug in phan
+      // @phan-suppress-next-line PhanTypeInvalidRightOperandOfBitwiseOp
+      if ($c & $severity === $c) {
+        foreach ($handlers as $handler) {
+          if ($handler($c, $m, $f, $l) === true) {
+            $this->logError(true, $error);
+            return true;
+          }
+        }
       }
     }
+
+    $this->logError(false, $error);
     return false;
   }
 
   /**
-   * handles uncaught exceptions.
+   * Handles uncaught exceptions.
    *
-   * @param Throwable $e          the exception
-   * @throws ExceptableException  if no registered handler handles the exception
+   * @param Throwable $e         The uncaught exception
+   * @throws ExceptableException If no registered handler handles the exception
    */
-  protected function _exception(Throwable $e) {
-    $severity = $e instanceof Exceptable ? $e->getSeverity() : Exceptable::ERROR;
-    foreach ($this->_exceptionHandlers as $handler) {
-      if ($handler->handles(_Handler::TYPE_EXCEPTION, $severity) && $handler->handle($e)) {
+  protected function handleException(Throwable $e) : void {
+    foreach ($this->exceptionHandlers as $catches => $handler) {
+      if ($e instanceof $catches && $handler($e) === true) {
+        if ($this->debug) {
+          $this->logException(true, $e);
+        }
         return;
       }
     }
 
+    $this->logException(false, $e);
     throw new ExceptableException(ExceptableException::UNCAUGHT_EXCEPTION, [], $e);
   }
 
   /**
-   * handles shutdown sequence.
-   *
-   * @throws ErrorException  if shutdown is due to a fatal error
+   * Handles shutdown sequence;
+   * triggers errorHandler() if shutdown was due to a fatal error.
    */
-  protected function _shutdown() {
-    if (! $this->_registered) {
+  protected function handleShutdown() : void {
+    $e = error_get_last();
+    if ($e && $e['type'] === E_ERROR) {
+      $this->handleError($e['type'], $e['message'], $e['file'], $e['line']);
+    }
+
+    if (! $this->registered) {
       return;
     }
 
-    $e = error_get_last();
-    if ($e && $e['type'] === E_ERROR) {
-      $this->_error($e['type'], $e['message'], $e['file'], $e['line'], $e['context'] ?? []);
-    }
-
-    foreach ($this->_shutdownHandlers as $handler) {
-      $handler();
-    }
-  }
-}
-
-/** @internal  utility class for wrapping callables as error/exception/shutdown handlers. */
-class _Handler {
-
-  public const TYPE_ERROR = 1;
-  public const TYPE_EXCEPTION = 2;
-  public const TYPE_SHUTDOWN = 3;
-
-  public const ANY_SEVERITY = -1;
-
-  protected $_arguments = [];
-
-  protected $_handler;
-  protected $_type;
-  protected $_severity;
-
-  public function __construct(callable $handler, int $type, int $severity=null) {
-    $this->_handler = $handler;
-    $this->_type = $type;
-    $this->_severity = $severity ?? self::ANY_SEVERITY;
-  }
-
-  /** @internal  invokes the callback with given arguments. */
-  public function handle(...$arguments) : bool {
-    try {
-      return (($this->_handler)(...($arguments + $this->_arguments)) === true) ?: false;
-    } catch (Throwable $e) {
-      throw new ExceptableException(
-        ExceptableException::INVALID_HANDLER,
-        ['type' => $this->_type()],
-        $e
-      );
+    foreach ($this->shutdownHandlers as [$handler, $arguments]) {
+      $handler(...$arguments);
     }
   }
 
-  /** @internal  checks whether this handler is registered for the given severity. */
-  public function handles(int $type, int $severity) : bool {
-    return $type === $this->_type &&
-      ($this->_severity === self::ANY_SEVERITY || ($severity & $this->_severity) === $severity);
+  /**
+   * Logs an error according to debug settings and logger availability.
+   *
+   * The following information is passed to the logger:
+   *  - float  $time       Unixtime error was logged, with microsecond precision
+   *  - string $type       Always "error"
+   *  - bool   $handled    Was this error handled by a registered handler?
+   *  - bool   $controlled Was this error suppressed by the error control operator?
+   *  - int    $code       Error code
+   *  - string $message    Error message
+   *  - string $file       File
+   *  - int    $line       Line
+   * If debug mode is enabled, a backtrace is added as well:
+   *  - array  $trace      Backtrace
+   *
+   * @param bool      $handled   Was this error handled by a registered handler?
+   * @param array $error       Error details
+   */
+  protected function logError(bool $handled, array $error) : void {
+    $error = [
+      "time" => microtime(true),
+      "type" => "error",
+      "handled" => $handled,
+      "controled" => error_reporting() === 0
+    ] + $error + [
+      "code" => 0,
+      "message" => "unknown error",
+      "file" => "unknown",
+      "line" => 0
+    ];
+
+    if ($this->debug) {
+      $error["trace"] = debug_backtrace();
+      $this->errors[] = $error;
+    }
+
+    if (isset($this->logger)) {
+      if ($this->debug) {
+        $this->logger->log(LogLevel::DEBUG, $error["message"], $error);
+      }
+
+      if (! $handled) {
+        $this->logger->log(
+          $this->getLogLevel($error["code"]),
+          $error["message"],
+          $error
+        );
+      }
+    }
   }
 
-  /** @internal  specifies default arguments to pass to handler. */
-  public function defaultArguments(array $arguments) {
-    $this->_arguments = $arguments;
-    return $this;
-  }
+  /**
+   * Logs an exception according to debug settings and logger availability.
+   *
+   * The following information is passed to the logger:
+   *  - float  $time       Unixtime error was logged, with microsecond precision
+   *  - string $type       Always "exception"
+   *  - bool   $handled    Was this error handled by a registered handler?
+   *  - int    $exception  Exception
+   *
+   * @param bool      $handled Was this error handled by a registered handler?
+   * @param Throwable $e       The exception instance
+   */
+  protected function logException(bool $handled, Throwable $e) : void {
+    $error = [
+      "time" => microtime(true),
+      "type" => "exception",
+      "handled" => $handled,
+      "exception" => $e
+    ];
 
-  /** @internal  gets a string representation of the handler type. */
-  protected function _type() : string {
-    switch ($this->_type) {
-      case self::TYPE_ERROR :
-        return 'error';
-      case self::TYPE_EXCEPTION :
-        return 'exception';
-      case self::TYPE_SHUTDOWN :
-        return 'shutdown';
-      default :
-        return (string) $this->_type;
+    if ($this->debug) {
+      $this->errors[] = $error;
+    }
+
+    if (isset($this->logger)) {
+      if ($this->debug) {
+        $this->logger->log(LogLevel::DEBUG, $e->getMessage(), $error);
+      }
+
+      if(! $handled) {
+        $this->logger->log(LogLevel::CRITICAL, $e->getMessage(), $error);
+      }
     }
   }
 }
