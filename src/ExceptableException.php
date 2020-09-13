@@ -20,15 +20,15 @@ declare(strict_types = 1);
 
 namespace at\exceptable;
 
-use at\exceptable\ {
-  Exceptable,
-  Exception
-};
+use Exception;
+
+use at\exceptable\IsExceptable;
 
 /**
  * exceptableexceptionsexceptableexceptionsexceptableexceptions
  */
 class ExceptableException extends Exception {
+  use IsExceptable;
 
   /**
    * @var int NO_SUCH_CODE       Invalid exception code
@@ -43,17 +43,17 @@ class ExceptableException extends Exception {
   public const INFO = [
     self::NO_SUCH_CODE => [
       "message" => "No such code",
-      "key" => "exceptable.exceptableexception.no_such_code",
+      "formatKey" => "exceptable.exceptableexception.no_such_code",
       "format" => "No exception code '{code}' is known"
     ],
     self::UNCAUGHT_EXCEPTION => [
       "message" => "Uncaught exception",
-      "key" => "exceptable.exceptableexception.uncaught_exception",
+      "formatKey" => "exceptable.exceptableexception.uncaught_exception",
       "format" => "No registered handler caught exception: {__rootMessage__}"
     ],
     self::INVALID_HANDLER => [
       "message" => "Invalid handler",
-      "key" => "exceptable.exceptableexception.invalid_handler",
+      "formatKey" => "exceptable.exceptableexception.invalid_handler",
       "format" => "Invalid handler [{type}]: {__rootMessage__}"
     ]
   ];

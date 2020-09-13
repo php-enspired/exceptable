@@ -103,9 +103,10 @@ trait IsExceptable {
   /** @see Exceptable::__construct() */
   public function __construct(int $code, array $context = [], Throwable $previous = null) {
     $this->context = $context;
+    $this->context["__rootMessage__"] = $this->getRoot()->getMessage();
+
     // @phan-suppress-next-line PhanTraitParentReference
     parent::__construct($this->makeMessage($code), $code, $previous);
-    $this->context["__rootMessage__"] = $this->getRoot()->getMessage();
   }
 
   /** @see Exceptable::getContext() */
@@ -126,7 +127,7 @@ trait IsExceptable {
   /**
    * Looks up a message format by key, if a messages bundle is available.
    *
-   * @param string|null $key Dot-delimited key path
+   * @param string|null $key Dot-delimited path to desired key
    * @return string|null Message format on success; null otherwise
    */
   protected function getMessageFormat(?string $key) : ?string {
@@ -166,7 +167,7 @@ trait IsExceptable {
   }
 
   /**
-   * Fallback message formatter used if Intl is not installed.
+   * Fallback message formatter, used if Intl is not installed.
    * Supports simple value substitution only.
    *
    * @param string $format Message format string
