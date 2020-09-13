@@ -57,9 +57,6 @@ throw new FooException(FooException::UNKNOWN_FOO, $context);
 
 see more in [the wiki](https://github.com/php-enspired/exceptable/wiki).
 
-docs
-----
-
 Version 2 will reach End-of-Life on November 30, 2020.
 ------------------------------------------------------
 
@@ -73,6 +70,9 @@ Version 3 will require PHP 7.3 or greater and introduces some exciting changes f
 - The generic `Exceptable` Exception base class has been removed.
 - Introduces a "debug mode" for Handlers!
 - Handlers are now Logger (e.g., Monolog)-aware!
+
+docs
+----
 
 [Read more about the 3.0 release](https://github.com/php-enspired/exceptable/wiki/new-in-3.0).
 
