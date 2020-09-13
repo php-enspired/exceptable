@@ -18,11 +18,11 @@
  */
 declare(strict_types = 1);
 
-namespace at\exceptable\Spl;
+namespace AT\Exceptable\Spl;
 
 use UnexpectedValueException as SplUnexpectedValueException;
 
-use at\exceptable\ {
+use AT\Exceptable\ {
   Exceptable,
   IsExceptable
 };
@@ -35,7 +35,7 @@ class UnexpectedValueException extends SplUnexpectedValueException implements Ex
   use IsExceptable;
 
   /** @var int Unexpected value. */
-  public const UNEXPECTED_VALUE = 1;
+  public const UNEXPECTED_VALUE = 0;
 
   /** @see IsExceptable::getInfo() */
   public const INFO = [

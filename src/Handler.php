@@ -18,12 +18,12 @@
  */
 declare(strict_types = 1);
 
-namespace at\exceptable;
+namespace AT\Exceptable;
 
 use ErrorException,
   Throwable;
 
-use at\exceptable\ExceptableException;
+use AT\Exceptable\ExceptableException;
 
 use Psr\Log\ {
   LoggerAwareInterface as LoggerAware,
@@ -39,7 +39,7 @@ class Handler implements LoggerAware {
   /** @var bool Debug mode? */
   protected $debug = false;
 
-  /** @var array[] List of registered error handlers, grouped by error type. */
+  /** @var callable[][] List of registered error handlers, grouped by error type. */
   protected $errorHandlers = [];
 
   /** @var array[] List of errors/exceptions encountered in debug mode. */
@@ -276,9 +276,7 @@ class Handler implements LoggerAware {
     }
 
     foreach ($this->errorHandlers as $severity => $handlers) {
-      // @todo i think this is a bug in phan
-      // @phan-suppress-next-line PhanTypeInvalidRightOperandOfBitwiseOp
-      if ($c & $severity === $c) {
+      if (($c & $severity) === $c) {
         foreach ($handlers as $handler) {
           if ($handler($c, $m, $f, $l) === true) {
             $this->logError(true, $error);

@@ -18,12 +18,12 @@
  */
 declare(strict_types = 1);
 
-namespace at\exceptable\tests;
+namespace AT\Exceptable\Tests;
 
 use ErrorException,
   Throwable;
 
-use at\exceptable\ {
+use AT\Exceptable\ {
   ExceptableException,
   Handler
 };

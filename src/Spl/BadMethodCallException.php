@@ -18,11 +18,11 @@
  */
 declare(strict_types = 1);
 
-namespace at\exceptable\Spl;
+namespace AT\Exceptable\Spl;
 
 use BadMethodCallException as SplBadMethodCallException;
 
-use at\exceptable\ {
+use AT\Exceptable\ {
   Exceptable,
   IsExceptable
 };
@@ -35,7 +35,7 @@ class BadMethodCallException extends SplBadMethodCallException implements Except
   use IsExceptable;
 
   /** @var int Bad method call. */
-  public const BAD_METHOD_CALL = 1;
+  public const BAD_METHOD_CALL = 0;
 
   /** @see IsExceptable::getInfo() */
   public const INFO = [

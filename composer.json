@@ -26,7 +26,8 @@
   },
   "autoload": {
     "psr-4": {
-      "at\\exceptable\\": "src/"
+      "AT\\Exceptable\\": "src/",
+      "AT\\Exceptable\\Tests\\": "tests/"
     }
   },
   "scripts": {

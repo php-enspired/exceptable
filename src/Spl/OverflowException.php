@@ -18,11 +18,11 @@
  */
 declare(strict_types = 1);
 
-namespace at\exceptable\Spl;
+namespace AT\Exceptable\Spl;
 
 use OverflowException as SplOverflowException;
 
-use at\exceptable\ {
+use AT\Exceptable\ {
   Exceptable,
   IsExceptable
 };
@@ -35,7 +35,7 @@ class OverflowException extends SplOverflowException implements Exceptable {
   use IsExceptable;
 
   /** @var int Overflow. */
-  public const OVERFLOW = 1;
+  public const OVERFLOW = 0;
 
   /** @see IsExceptable::getInfo() */
   public const INFO = [

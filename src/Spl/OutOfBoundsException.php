@@ -18,11 +18,11 @@
  */
 declare(strict_types = 1);
 
-namespace at\exceptable\Spl;
+namespace AT\Exceptable\Spl;
 
 use OutOfBoundsException as SplOutOfBoundsException;
 
-use at\exceptable\ {
+use AT\Exceptable\ {
   Exceptable,
   IsExceptable
 };
@@ -35,7 +35,7 @@ class OutOfBoundsException extends SplOutOfBoundsException implements Exceptable
   use IsExceptable;
 
   /** @var int Out of bounds. */
-  public const OUT_OF_BOUNDS = 1;
+  public const OUT_OF_BOUNDS = 0;
 
   /** @see IsExceptable::getInfo() */
   public const INFO = [

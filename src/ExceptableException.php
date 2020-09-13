@@ -18,11 +18,11 @@
  */
 declare(strict_types = 1);
 
-namespace at\exceptable;
+namespace AT\Exceptable;
 
 use Exception;
 
-use at\exceptable\IsExceptable;
+use AT\Exceptable\IsExceptable;
 
 /**
  * exceptableexceptionsexceptableexceptionsexceptableexceptions

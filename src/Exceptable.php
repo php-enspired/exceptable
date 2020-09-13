@@ -18,12 +18,12 @@
  */
 declare(strict_types = 1);
 
-namespace at\exceptable;
+namespace AT\Exceptable;
 
 use ResourceBundle,
   Throwable;
 
-use at\exceptable\ExceptableException;
+use AT\Exceptable\ExceptableException;
 
 /**
  * Augmented interface for exceptional exceptions.
@@ -72,7 +72,7 @@ interface Exceptable extends Throwable {
    * @param Throwable|null $previous Previous exception
    * @throws ExceptableException     If code is invalid
    */
-  public function __construct(int $code, array $context = [], Throwable $previous = null);
+  public function __construct(int $code = 0, array $context = [], Throwable $previous = null);
 
   /**
    * Gets contextual information about this exception.

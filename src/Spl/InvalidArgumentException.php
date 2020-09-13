@@ -18,11 +18,11 @@
  */
 declare(strict_types = 1);
 
-namespace at\exceptable\Spl;
+namespace AT\Exceptable\Spl;
 
 use InvalidArgumentException as SplInvalidArgumentException;
 
-use at\exceptable\ {
+use AT\Exceptable\ {
   Exceptable,
   IsExceptable
 };
@@ -35,7 +35,7 @@ class InvalidArgumentException extends SplInvalidArgumentException implements Ex
   use IsExceptable;
 
   /** @var int Invalid argument. */
-  public const INVALID_ARGUMENT = 1;
+  public const INVALID_ARGUMENT = 0;
 
   /** @see IsExceptable::getInfo() */
   public const INFO = [

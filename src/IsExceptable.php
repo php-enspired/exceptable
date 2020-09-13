@@ -18,15 +18,13 @@
  */
 declare(strict_types = 1);
 
-namespace at\exceptable;
+namespace AT\Exceptable;
 
 use MessageFormatter,
   ResourceBundle,
   Throwable;
 
-use at\exceptable\ {
-  Exceptable
-};
+use AT\Exceptable\Exceptable;
 
 /**
  * Base implementation for Exceptable interface, including contexted message construction.
@@ -37,7 +35,10 @@ use at\exceptable\ {
  */
 trait IsExceptable {
 
+  /** @var string Preferred locale for messages. */
   protected static $locale;
+
+  /** @var ResourceBundle ICU messages bundle. */
   protected static $messages;
 
   /**
@@ -101,7 +102,7 @@ trait IsExceptable {
   protected $context = [];
 
   /** @see Exceptable::__construct() */
-  public function __construct(int $code, array $context = [], Throwable $previous = null) {
+  public function __construct(int $code = 0, array $context = [], Throwable $previous = null) {
     $this->context = $context;
     $this->context["__rootMessage__"] = $this->getRoot()->getMessage();
 

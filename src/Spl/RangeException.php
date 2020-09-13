@@ -18,11 +18,11 @@
  */
 declare(strict_types = 1);
 
-namespace at\exceptable\Spl;
+namespace AT\Exceptable\Spl;
 
 use RangeException as SplRangeException;
 
-use at\exceptable\ {
+use AT\Exceptable\ {
   Exceptable,
   IsExceptable
 };
@@ -35,7 +35,7 @@ class RangeException extends SplRangeException implements Exceptable {
   use IsExceptable;
 
   /** @var int Out of range. */
-  public const OUT_OF_RANGE = 1;
+  public const OUT_OF_RANGE = 0;
 
   /** @see IsExceptable::getInfo() */
   public const INFO = [

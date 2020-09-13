@@ -18,11 +18,11 @@
  */
 declare(strict_types = 1);
 
-namespace at\exceptable\Spl;
+namespace AT\Exceptable\Spl;
 
 use UnderflowException as SplUnderflowException;
 
-use at\exceptable\ {
+use AT\Exceptable\ {
   Exceptable,
   IsExceptable
 };
@@ -35,7 +35,7 @@ class UnderflowException extends SplUnderflowException implements Exceptable {
   use IsExceptable;
 
   /** @var int Underflow. */
-  public const UNDERFLOW = 1;
+  public const UNDERFLOW = 0;
 
   /** @see IsExceptable::getInfo() */
   public const INFO = [

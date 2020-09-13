@@ -18,11 +18,11 @@
  */
 declare(strict_types = 1);
 
-namespace at\exceptable\Spl;
+namespace AT\Exceptable\Spl;
 
 use BadFunctionCallException as SplBadFunctionCallException;
 
-use at\exceptable\ {
+use AT\Exceptable\ {
   Exceptable,
   IsExceptable
 };
@@ -35,7 +35,7 @@ class BadFunctionCallException extends SplBadFunctionCallException implements Ex
   use IsExceptable;
 
   /** @var int Bad function call. */
-  public const BAD_FUNCTION_CALL = 1;
+  public const BAD_FUNCTION_CALL = 0;
 
   /** @see IsExceptable::getInfo() */
   public const INFO = [

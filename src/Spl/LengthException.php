@@ -18,11 +18,11 @@
  */
 declare(strict_types = 1);
 
-namespace at\exceptable\Spl;
+namespace AT\Exceptable\Spl;
 
 use LengthException as SplLengthException;
 
-use at\exceptable\ {
+use AT\Exceptable\ {
   Exceptable,
   IsExceptable
 };
@@ -35,7 +35,7 @@ class LengthException extends SplLengthException implements Exceptable {
   use IsExceptable;
 
   /** @var int Length error. */
-  public const LENGTH_ERROR = 1;
+  public const LENGTH_ERROR = 0;
 
   /** @see IsExceptable::getInfo() */
   public const INFO = [
