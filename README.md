@@ -62,7 +62,9 @@ docs
 
 **Version 2 will reach End-of-Life on November 30, 2020.**
 
-**Version 3.0 is coming soon!** and will require PHP 7.3 or greater and introduces some exciting changes from version 2:
+**Version 3.0 is coming soon!** 
+
+Version 3 will require PHP 7.3 or greater and introduces some exciting changes from version 2:
 - Support* for ICU locales, message formats, and resource bundles!\
   \* _requires the intl extension._
 - Ready-to-extend (or just use) `Exceptable` classes based on the built-in SPL Exception classes!
