@@ -35,7 +35,7 @@ class LogicException extends SplLogicException implements Exceptable {
   use IsExceptable;
 
   /** @var int Program logic error. */
-  public const PROGRAM_LOGIC_ERROR = 1;
+  public const PROGRAM_LOGIC_ERROR = 0;
 
   /** @see IsExceptable::getInfo() */
   public const INFO = [

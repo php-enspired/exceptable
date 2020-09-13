@@ -35,7 +35,7 @@ class DomainException extends SplDomainException implements Exceptable {
   use IsExceptable;
 
   /** @var int Domain error. */
-  public const DOMAIN_ERROR = 1;
+  public const DOMAIN_ERROR = 0;
 
   /** @see IsExceptable::getInfo() */
   public const INFO = [

@@ -35,7 +35,7 @@ class BadFunctionCallException extends SplBadFunctionCallException implements Ex
   use IsExceptable;
 
   /** @var int Bad function call. */
-  public const BAD_FUNCTION_CALL = 1;
+  public const BAD_FUNCTION_CALL = 0;
 
   /** @see IsExceptable::getInfo() */
   public const INFO = [

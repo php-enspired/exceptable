@@ -35,7 +35,7 @@ class RuntimeException extends SplRuntimeException implements Exceptable {
   use IsExceptable;
 
   /** @var int Runtime error. */
-  public const RUNTIME_ERROR = 1;
+  public const RUNTIME_ERROR = 0;
 
   /** @see IsExceptable::getInfo() */
   public const INFO = [

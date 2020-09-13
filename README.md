@@ -75,11 +75,11 @@ docs
 
 - API:
   - [The Exceptable Interface](https://github.com/php-enspired/exceptable/wiki/API:-The-Exceptable-Interface)
-  - [SPL Exception Classes](https://github.com/php-enspired/exceptable/wiki/API:-SPL-Exception-Classes)
   - [The Handler Class](https://github.com/php-enspired/exceptable/wiki/API:-The-Handler-Class)
-  - [The ExceptableException Class](https://github.com/php-enspired/exceptable/wiki/API:-The-ExceptableException-Class)
 - [Basic Exceptable Usage](https://github.com/php-enspired/exceptable/wiki/Usage:-Exceptables)
 - [Basic Handler Usage](https://github.com/php-enspired/exceptable/wiki/Usage:-Handlers)
+- [Localization and Message Formatting](https://github.com/php-enspired/exceptable/wiki/Usage:-ICU)
+- [SPL Exception Classes](https://github.com/php-enspired/exceptable/wiki/Usage:-SPL-Exception-Classes)
 
 contributing or getting help
 ----------------------------

@@ -35,7 +35,7 @@ class InvalidArgumentException extends SplInvalidArgumentException implements Ex
   use IsExceptable;
 
   /** @var int Invalid argument. */
-  public const INVALID_ARGUMENT = 1;
+  public const INVALID_ARGUMENT = 0;
 
   /** @see IsExceptable::getInfo() */
   public const INFO = [

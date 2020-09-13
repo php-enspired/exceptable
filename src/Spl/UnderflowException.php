@@ -35,7 +35,7 @@ class UnderflowException extends SplUnderflowException implements Exceptable {
   use IsExceptable;
 
   /** @var int Underflow. */
-  public const UNDERFLOW = 1;
+  public const UNDERFLOW = 0;
 
   /** @see IsExceptable::getInfo() */
   public const INFO = [

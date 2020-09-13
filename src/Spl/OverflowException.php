@@ -35,7 +35,7 @@ class OverflowException extends SplOverflowException implements Exceptable {
   use IsExceptable;
 
   /** @var int Overflow. */
-  public const OVERFLOW = 1;
+  public const OVERFLOW = 0;
 
   /** @see IsExceptable::getInfo() */
   public const INFO = [

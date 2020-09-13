@@ -35,7 +35,7 @@ class OutOfBoundsException extends SplOutOfBoundsException implements Exceptable
   use IsExceptable;
 
   /** @var int Out of bounds. */
-  public const OUT_OF_BOUNDS = 1;
+  public const OUT_OF_BOUNDS = 0;
 
   /** @see IsExceptable::getInfo() */
   public const INFO = [

@@ -35,7 +35,7 @@ class BadMethodCallException extends SplBadMethodCallException implements Except
   use IsExceptable;
 
   /** @var int Bad method call. */
-  public const BAD_METHOD_CALL = 1;
+  public const BAD_METHOD_CALL = 0;
 
   /** @see IsExceptable::getInfo() */
   public const INFO = [
