@@ -22,12 +22,15 @@ namespace AT\Exceptable;
 
 use Exception;
 
-use AT\Exceptable\IsExceptable;
+use AT\Exceptable\ {
+  Exceptable,
+  IsExceptable
+};
 
 /**
  * exceptableexceptionsexceptableexceptionsexceptableexceptions
  */
-class ExceptableException extends Exception {
+class ExceptableException extends Exception implements Exceptable {
   use IsExceptable;
 
   /**

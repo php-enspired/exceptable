@@ -36,7 +36,7 @@ use AT\Exceptable\Exceptable;
 trait IsExceptable {
 
   /** @var string Preferred locale for messages. */
-  protected static $locale;
+  protected static $locale = "en";
 
   /** @var ResourceBundle ICU messages bundle. */
   protected static $messages;
@@ -93,10 +93,10 @@ trait IsExceptable {
    * @var int    $line
    * @var string $message
    */
-  protected $code;
-  protected $file;
-  protected $line;
-  protected $message;
+  protected $code = 0;
+  protected $file = null;
+  protected $line = null;
+  protected $message = "";
 
   /** @var array Contextual information. */
   protected $context = [];
@@ -158,7 +158,7 @@ trait IsExceptable {
   protected function makeMessage(int $code) : string {
     $info = static::getInfo($code);
 
-    $format = $this->getMessageFormat($info["formatKey"]) ?? $info["format"];
+    $format = $this->getMessageFormat($info["formatKey"] ?? null) ?? $info["format"];
     if (extension_loaded('intl')) {
       return MessageFormatter::formatMessage(static::$locale, $format, $this->context) ?:
         $info["message"];
@@ -190,23 +190,23 @@ trait IsExceptable {
   }
 
   /** @see https://php.net/Throwable.getCode */
-  abstract public function getCode() : int;
+  abstract public function getCode();
 
   /** @see https://php.net/Throwable.getFile */
-  abstract public function getFile() : string;
+  abstract public function getFile();
 
   /** @see https://php.net/Throwable.getLine */
-  abstract public function getLine() : int;
+  abstract public function getLine();
 
   /** @see https://php.net/Throwable.getMessage */
-  abstract public function getMessage() : string;
+  abstract public function getMessage();
 
   /** @see https://php.net/Throwable.getPrevious */
-  abstract public function getPrevious() : Throwable;
+  abstract public function getPrevious();
 
   /** @see https://php.net/Throwable.getTrace */
-  abstract public function getTrace() : array;
+  abstract public function getTrace();
 
   /** @see https://php.net/Throwable.getTraceasString */
-  abstract public function getTraceAsString() : string;
+  abstract public function getTraceAsString();
 }

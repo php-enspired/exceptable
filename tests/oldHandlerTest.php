@@ -34,7 +34,7 @@ use PHPUnit_Framework_Error as PHPError,
 /**
  * tests Handler.
  */
-abstract class _HandlerTest extends TestCase {
+abstract class HandlerTest extends TestCase {
 
   /**
    * @covers Handler::during()
