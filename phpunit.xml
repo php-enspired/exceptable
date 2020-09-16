@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<phpunit
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   bootstrap="./vendor/autoload.php"
+  xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.3/phpunit.xsd"
   colors="true">
-  <filter>
-    <whitelist processUncoveredFilesFromWhitelist="true">
+  <coverage processUncoveredFiles="true">
+    <include>
       <directory suffix=".php">./src</directory>
-    </whitelist>
-  </filter>
+    </include>
+  </coverage>
 </phpunit>

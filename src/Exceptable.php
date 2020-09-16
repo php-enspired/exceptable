@@ -37,6 +37,15 @@ use AT\Exceptable\ExceptableException;
 interface Exceptable extends Throwable {
 
   /**
+   * Factory: creates a new Exceptable from the given error code,
+   * adjusting exception info to reflect the location of the calling code.
+   *
+   * @see Exceptable::__construct()
+   * @return Exceptable
+   */
+  public static function create(int $code, ?array $context = [], Throwable $previous = null) : Exceptable;
+
+  /**
    * Gets information about a code known to the implementing class.
    *
    * @param int $code            The exception code to look up
@@ -59,7 +68,16 @@ interface Exceptable extends Throwable {
   public static function hasInfo(int $code) : bool;
 
   /**
-   * Sets up localized message support.
+   * Checks whether the given exception matches a code known to the implementing class.
+   *
+   * @param Throwable $e    Subject exception
+   * @param int       $code Target code
+   * @return bool True if exception class and code matches; false otherwise
+   */
+  public static function is(Throwable $e, int $code) : bool;
+
+  /**
+   * Sets up localized message support for the concrete implementation(s).
    *
    * @param string         $locale   Preferred locale
    * @param ResourceBundle $messages Message format patterns
@@ -67,12 +85,24 @@ interface Exceptable extends Throwable {
   public static function localize(string $locale, ResourceBundle $messages) : void;
 
   /**
+   * Factory: creates and throws a new Exceptable from the given error code,
+   * adjusting exception info to reflect the location of the calling code.
+   *
+   * @phan-suppress PhanTypeInvalidThrowsIsInterface
+   *  Intentional.
+   *
+   * @see Exceptable::__construct()
+   * @throws Exceptable
+   */
+  public static function throw(int $code, ?array $context = [], Throwable $previous = null) : void;
+
+  /**
    * @param int            $code     Exception code
-   * @param array          $context  Additional exception context
+   * @param ?array         $context  Additional exception context
    * @param Throwable|null $previous Previous exception
    * @throws ExceptableException     If code is invalid
    */
-  public function __construct(int $code = 0, array $context = [], Throwable $previous = null);
+  public function __construct(int $code = 0, ?array $context = [], Throwable $previous = null);
 
   /**
    * Gets contextual information about this exception.

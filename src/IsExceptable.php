@@ -42,15 +42,12 @@ trait IsExceptable {
   protected static $messages;
 
   /**
-   * Factory: creates a new Exceptable from the given error code,
-   * and adjusts exception info to reflect the location of the calling code.
+   * {@inheritDoc}
    *
    * @phan-suppress PhanTypeInstantiateTraitStaticOrSelf
-   *
-   * @see Exceptable::__construct()
-   * @return Exceptable
+   *  We define the constructor. You shouldn't change it.
    */
-  public static function create(int $code, array $context = [], Throwable $previous = null) : Exceptable {
+  public static function create(int $code, ?array $context = [], Throwable $previous = null) : Exceptable {
     $exceptable = new static($code, $context, $previous);
 
     $frame = $exceptable->getTrace()[0];
@@ -67,9 +64,7 @@ trait IsExceptable {
       throw ExceptableException::create(ExceptableException::NO_SUCH_CODE, ['code' => $code]);
     }
 
-    return ["code" => $code] +
-      static::INFO[$code] +
-      ["format" => static::INFO[$code]["message"]];
+    return ["code" => $code] + static::INFO[$code] + ["format" => null];
   }
 
   /** @see Exceptable::hasInfo() */
@@ -79,10 +74,34 @@ trait IsExceptable {
       is_string(static::INFO[$code]["message"]);
   }
 
+  /** @see Exceptable::is() */
+  public static function is(Throwable $e, int $code) : bool {
+    return (get_class($e) === static::class) &&
+      static::hasInfo($code) &&
+      $e->getCode() === $code;
+  }
+
   /** @see Exceptable::localize() */
   public static function localize(string $locale, ResourceBundle $messages) : void {
     static::$locale = $locale;
     static::$messages = $messages;
+  }
+
+  /**
+   * {@inheritDoc}
+   *
+   * @phan-suppress PhanTypeInstantiateTraitStaticOrSelf
+   *  We define the constructor. You shouldn't change it.
+   */
+  public static function throw(int $code, ?array $context = [], Throwable $previous = null) : void {
+    $exceptable = new static($code, $context, $previous);
+
+    $frame = $exceptable->getTrace()[0];
+    $exceptable->file = $frame["file"];
+    $exceptable->line = $frame["line"];
+
+    assert($exceptable instanceof Exceptable);
+    throw $exceptable;
   }
 
   /**
@@ -102,12 +121,16 @@ trait IsExceptable {
   protected $context = [];
 
   /** @see Exceptable::__construct() */
-  public function __construct(int $code = 0, array $context = [], Throwable $previous = null) {
-    $this->context = $context;
-    $this->context["__rootMessage__"] = $this->getRoot()->getMessage();
+  public function __construct(int $code = 0, ?array $context = [], Throwable $previous = null) {
+    $this->context = $context ?? [];
+    $this->context["__rootMessage__"] = isset($previous) ?
+      $this->findRoot($previous)->getMessage() :
+      null;
 
     // @phan-suppress-next-line PhanTraitParentReference
     parent::__construct($this->makeMessage($code), $code, $previous);
+
+    $this->context["__rootMessage__"] = $this->context["__rootMessage__"] ?? $this->getMessage();
   }
 
   /** @see Exceptable::getContext() */
@@ -115,9 +138,23 @@ trait IsExceptable {
     return $this->context;
   }
 
-  /** @see Exceptable::getRoot() */
+  /**
+   * @see Exceptable::getRoot()
+   *
+   * @phan-suppress PhanTypeMismatchArgument
+   *  Exceptables ARE Throwable.
+   */
   public function getRoot() : Throwable {
-    $root = $this;
+    return $this->findRoot($this);
+  }
+
+  /**
+   * Finds the root (most-previous) exception of the given exception.
+   *
+   * @param Throwable $root Subject exception
+   * @return Throwable Root exception
+   */
+  protected function findRoot(Throwable $root) : Throwable {
     while (($previous = $root->getPrevious()) !== null) {
       $root = $previous;
     }
@@ -159,12 +196,21 @@ trait IsExceptable {
     $info = static::getInfo($code);
 
     $format = $this->getMessageFormat($info["formatKey"] ?? null) ?? $info["format"];
-    if (extension_loaded('intl')) {
-      return MessageFormatter::formatMessage(static::$locale, $format, $this->context) ?:
-        $info["message"];
+    if (isset($format)) {
+      if (extension_loaded("intl")) {
+        $message = MessageFormatter::formatMessage(static::$locale, $format, $this->context) ?:
+          $info["message"];
+
+        // :(
+        if ($message !== $format) {
+          return $message;
+        }
+      }
+
+      return $this->substituteMessage($format) ?? $info["message"];
     }
 
-    return $this->substituteMessage($format) ?? $info["message"];
+    return $info["message"];
   }
 
   /**
