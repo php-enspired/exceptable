@@ -72,7 +72,76 @@ class IsExceptableTest extends TestCase {
     }
 
     $this->assertIsExceptable($actual, $fqcn);
-    $this->assertExceptionOrigination($actual, __FILE__, $line);
+    $this->assertOrigination($actual, __FILE__, $line);
+    $this->assertHasCode($actual, $code);
+    $this->assertHasMessage($actual, $message);
+    $this->assertHasContext($actual, $context);
+    $this->assertHasPrevious($actual, $previous);
+    $this->assertHasRoot($actual, $previous ?? $actual);
+  }
+
+  /**
+   * @see ::testNewExceptable()
+   * @dataProvider newExceptableProvider
+   */
+  public function testCreateExceptable(
+    string $fqcn,
+    int $code,
+    ?array $context,
+    ?Throwable $previous,
+    string $message
+  ) : void {
+    if (isset($previous)) {
+      $line = __LINE__ + 1;
+      $actual = $fqcn::create($code, $context, $previous);
+    } elseif (isset($context)) {
+      $line = __LINE__ + 1;
+      $actual = $fqcn::create($code, $context);
+    } else {
+      $line = __LINE__ + 1;
+      $actual = $fqcn::create($code);
+    }
+
+    $this->assertIsExceptable($actual, $fqcn);
+    $this->assertOrigination($actual, __FILE__, $line);
+    $this->assertHasCode($actual, $code);
+    $this->assertHasMessage($actual, $message);
+    $this->assertHasContext($actual, $context);
+    $this->assertHasPrevious($actual, $previous);
+    $this->assertHasRoot($actual, $previous ?? $actual);
+  }
+
+  /**
+   * @see ::testNewExceptable()
+   * @dataProvider newExceptableProvider
+   */
+  public function testThrowExceptable(
+    string $fqcn,
+    int $code,
+    ?array $context,
+    ?Throwable $previous,
+    string $message
+  ) : void {
+    try {
+      $actual = null;
+      if (isset($previous)) {
+        $line = __LINE__ + 1;
+        $fqcn::throw($code, $context, $previous);
+      } elseif (isset($context)) {
+        $line = __LINE__ + 1;
+        $fqcn::throw($code, $context);
+      } else {
+        $line = __LINE__ + 1;
+        $fqcn::throw($code);
+      }
+    } catch (Exceptable $e) {
+      $actual = $e;
+    }
+
+    $this->assertNotNull($actual, "throw() did not throw an Exceptable");
+
+    $this->assertIsExceptable($actual, $fqcn);
+    $this->assertOrigination($actual, __FILE__, $line);
     $this->assertHasCode($actual, $code);
     $this->assertHasMessage($actual, $message);
     $this->assertHasContext($actual, $context);
@@ -146,6 +215,195 @@ class IsExceptableTest extends TestCase {
   }
 
   /**
+   * @dataProvider infoProvider
+   *
+   * @param string $fqcn     Fully qualified classname of Exceptable to test
+   * @param int    $code     Known exceptable code to get info for
+   * @param array  $expected Information expected to be returned
+   */
+  public function testGetInfo(string $fqcn, int $code, array $expected) : void {
+    $actual = $fqcn::getInfo($code);
+
+    $this->assertIsArray($actual, "getInfo() did not return an array");
+
+    $this->assertArrayHasKey("code", $actual, "getInfo()[code] is missing");
+    $this->assertIsInt($actual["code"], "getInfo()[code] is not a integer");
+
+    $this->assertArrayHasKey("message", $actual, "getInfo()[message] is missing");
+    $this->assertIsString($actual["message"], "getInfo()[message] is not a string");
+
+    $this->assertArrayHasKey("format", $actual, "getInfo()[format] is missing");
+    if (isset($actual["format"])) {
+      $this->assertIsString($actual["format"], "getInfo()[format] is not a string|null");
+    }
+
+    // these are the required keys and will fail if expectations are not provided
+    $expected += ["code" => $code, "message" => null, "format" => null];
+    foreach ($expected as $key => $expectedValue) {
+      $this->assertArrayHasKey($key, $actual, "getInfo()[{$key}] is missing");
+      $this->assertSame(
+        $expectedValue,
+        $actual[$key],
+        "getInfo()[{$key}] does not match expected value {$this->asString($expectedValue)}"
+      );
+    }
+  }
+
+  /**
+   * @dataProvider infoProvider
+   *
+   * @param string $fqcn     Fully qualified classname of Exceptable to test
+   * @param int    $code     Known exceptable code to get info for
+   */
+  public function testHasInfo(string $fqcn, int $code) : void {
+    $this->assertTrue($fqcn::hasInfo($code), "{$fqcn} reports it has no info for code {$code}");
+  }
+
+  /**
+   * @return array[] Testcases - @see testGetInfo()
+   */
+  public function infoProvider() : array {
+    return [
+      "__TestExceptable::UNKNOWN_FOO" => [
+        __TestExceptable::class,
+        __TestExceptable::UNKNOWN_FOO,
+        __TestExceptable::INFO[__TestExceptable::UNKNOWN_FOO]
+      ],
+      "__TestExceptable::TOO_MUCH_FOO" => [
+        __TestExceptable::class,
+        __TestExceptable::TOO_MUCH_FOO,
+        __TestExceptable::INFO[__TestExceptable::TOO_MUCH_FOO]
+      ]
+    ];
+  }
+
+  /**
+   * @dataProvider badInfoProvider
+   *
+   * @param string $fqcn Fully qualified classname of Exceptable to test
+   * @param int    $code Unknown exceptable code to get info for
+   */
+  public function testGetBadInfo(string $fqcn, int $code) : void {
+    $this->expectThrowable(
+      new ExceptableException(ExceptableException::NO_SUCH_CODE, ["code" => $code]),
+      self::EXPECT_THROWABLE_CODE | self::EXPECT_THROWABLE_MESSAGE
+    );
+
+    $fqcn::getInfo($code);
+  }
+
+  /**
+   * @dataProvider badInfoProvider
+   *
+   * @param string $fqcn     Fully qualified classname of Exceptable to test
+   * @param int    $code     Known exceptable code to get info for
+   */
+  public function testNotHasInfo(string $fqcn, int $code) : void {
+    $this->assertFalse($fqcn::hasInfo($code), "{$fqcn} reports it has info for code {$code}");
+  }
+
+  /**
+   * @return array[] Testcases - @see testGetBadInfo()
+   */
+  public function badInfoProvider() : array {
+    return [[__TestExceptable::class, 66]];
+  }
+
+  /**
+   * @dataProvider isProvider
+   *
+   * @param string $fqcn Fully qualified classname of Exceptable to test
+   * @param int    $code Unknown exceptable code to get info for
+   */
+  public function testIs(string $fqcn, int $code, Throwable $e, bool $expected) : void {
+    $e_code = get_class($e) . "::{$e->getCode()}";
+
+    if ($expected) {
+      $this->assertTrue(
+        $fqcn::is($e, $code),
+        "{$e_code} does not match expected {$fqcn}::{$code}"
+      );
+
+      return;
+    }
+
+    $this->assertFalse($fqcn::is($e, $code), "{$e_code} matches unexpected {$fqcn}::{$code}");
+  }
+
+  /**
+   * @return array[] Testcases - @see testIs()
+   */
+  public function isProvider() : array {
+    return [
+      "same class and code" => [
+        __TestExceptable::class,
+        __TestExceptable::UNKNOWN_FOO,
+        new __TestExceptable(__TestExceptable::UNKNOWN_FOO),
+        true
+      ],
+      "same class, different code" => [
+        __TestExceptable::class,
+        __TestExceptable::UNKNOWN_FOO,
+        new __TestExceptable(__TestExceptable::TOO_MUCH_FOO),
+        false
+      ],
+      "subclass, same code" => [
+        __TestExceptable::class,
+        __TestExceptable::UNKNOWN_FOO,
+        new class (__TestExceptable::UNKNOWN_FOO) extends __TestExceptable {},
+        false
+      ],
+      "non-exceptable, same code" => [
+        __TestExceptable::class,
+        __TestExceptable::UNKNOWN_FOO,
+        new Exception("", __TestExceptable::TOO_MUCH_FOO),
+        false
+      ],
+      "non-exceptable, different code" => [
+        __TestExceptable::class,
+        __TestExceptable::UNKNOWN_FOO,
+        new Exception("", 66),
+        false
+      ]
+    ];
+  }
+
+  /**
+   * @dataProvider localizationProvider
+   *
+   * @param string $fqcn            Fully qualified classname of Exceptable to test
+   * @param string $locale          Locale to test
+   * @param string $resource_bundle ICU resource bundle directory
+   * @param int    $code            Exceptable code to test
+   * @param array  $context         Contextual information
+   * @param string $expected        Expected message (localized, formatted)
+   */
+  public function testLocalization(
+    string $fqcn,
+    string $locale,
+    string $resource_bundle,
+    int $code,
+    array $context,
+    string $expected
+  ) : void {
+    if (! extension_loaded("intl")) {
+      $this->markTestSkipped("ext/intl is not loaded");
+      return;
+    }
+
+    $this->markTestIncomplete("not yet implemented");
+  }
+
+  /**
+   * @return array[] Testcases - @see testLocalization()
+   */
+  public function localizationProvider() : array {
+    return [
+      "@todo" => ["","","",0,[],""]
+    ];
+  }
+
+  /**
    * Asserts test subject is an instance of Exceptable and of the given FQCN.
    *
    * @param mixed  $actual Test subject
@@ -163,7 +421,7 @@ class IsExceptableTest extends TestCase {
    * @param string $file   Expected filename
    * @param int    $line   Expected line number
    */
-  protected function assertExceptionOrigination(Exceptable $actual, string $file, int $line) : void {
+  protected function assertOrigination(Exceptable $actual, string $file, int $line) : void {
     $this->assertSame(
       $file,
       $actual->getFile(),
@@ -284,112 +542,6 @@ class IsExceptableTest extends TestCase {
     } catch (JsonException $e) {
       return is_object($value) ? get_class($value) : gettype($value);
     }
-  }
-
-
-
-
-
-
-  /**
-   * @covers IsExceptable::getContext()
-   * @dataProvider
-   */
-
-  /**
-   * @covers IsExceptable::create()
-   * @dataProvider createProvider
-   *
-   * @param string $fqcn Target Exceptable FQCN
-   * @param int    $code Target Exceptable code
-   */
-  public function testCreate(string $fqcn, int $code) {
-    $file = __FILE__;
-    $line = __LINE__ + 1;
-    $actual = $fqcn::create($code);
-
-    $this->assertInstanceOf($fqcn, $actual);
-    $this->assertSame($code, $actual->getCode(), "create() did not assign code {$code}");
-    $this->assertSame(
-      $file,
-      $actual->getFile(),
-      "create()->file does not reflect the file where the method was called"
-    );
-    $this->assertSame(
-      $line,
-      $actual->getLine(),
-      "create()->line does not reflect the line where the method was called"
-    );
-  }
-
-  /**
-   * @return array[] Testcases: @see testCreate()
-   */
-  public function createProvider() : array {
-    return [
-      [__TestExceptable::class, __TestExceptable::UNKNOWN_FOO],
-      [__TestExceptable::class, __TestExceptable::TOO_MUCH_FOO]
-    ];
-  }
-
-  /**
-   * @covers IsExceptable::getInfo()
-   * @dataProvider infoProvider
-   *
-   * @param int   $code     Known exceptable code to get info for
-   * @param array $expected Information expected to be returned:
-   *  - string $message Plain exception message
-   *  - string $format  Formatting string for message with context
-   *  - mixed  $...     Additional key:value pairs
-   */
-  public function testGetInfo(int $code, array $expected) : void {
-    // minimum requirements (these _should_ always be provided)
-    $expected += ["code" => $code, "message" => ""];
-
-    $actual = $this->newIsExceptable($code)::getInfo($code);
-
-    $this->assertIsArray($actual);
-    foreach ($expected as $key => $expectedValue) {
-      $this->assertArrayHasKey($key, $actual, "getInfo()[{$key}] is not defined");
-      $this->assertSame(
-        $expectedValue,
-        $actual[$key],
-        "getInfo()[{$key}] does not match expected value {$expectedValue}"
-      );
-    }
-  }
-
-  /**
-   * @return array[] Testcases: @see testGetInfo()
-   */
-  public function infoProvider() : array {
-    return [
-      [__TestExceptable::UNKNOWN_FOO, __TestExceptable::INFO[__TestExceptable::UNKNOWN_FOO]],
-      [__TestExceptable::TOO_MUCH_FOO, __TestExceptable::INFO[__TestExceptable::TOO_MUCH_FOO]]
-    ];
-  }
-
-  /**
-   * @covers IsExceptable::getInfo()
-   * @dataProvider badInfoProvider
-   *
-   * @param int $code Unknown exceptable code to get info for
-   */
-  public function testGetBadInfo(int $code) : void {
-    $this->expectThrowable(
-      new ExceptableException(ExceptableException::NO_SUCH_CODE, ["code" => $code]),
-      self::EXPECT_THROWABLE_CODE | self::EXPECT_THROWABLE_MESSAGE
-    );
-
-    $this->newIsExceptable($code);
-  }
-
-  /**
-   * @return array[] Testcases:
-   *  - int $0 Unknown Exceptable code
-   */
-  public function badInfoProvider() : array {
-    return [[7]];
   }
 
   /**
