@@ -36,30 +36,28 @@ use AT\Exceptable\ {
  * @covers AT\Exceptable\Exceptable
  * @covers AT\Exceptable\IsExceptable
  *
- * This test case can be extended to test other concrete implementations:
- *  - override newIsExceptable() method to provide an instance of the appropriate class
- *  - override *Provider methods as needed to provide appropriate input and expectations:
- *    - infoProvider()
- *    - badInfoProvider()
+ * This test case can (should) be extended to test other concrete implementations:
+ *  - override exceptableFQCN() method to provide the name of the exceptable to test
+ *  - override *Provider methods to provide appropriate input and expectations
  */
 class IsExceptableTest extends TestCase {
 
   /**
    * @dataProvider newExceptableProvider
    *
-   * @param string     $fqcn     Fully qualified classname of Exceptable to test
    * @param int        $code     Exceptable code to test
    * @param ?array     $context  Contextual information to provide
    * @param ?Throwable $previous Previous exception to provide
    * @param string     $message  Expected exceprable message
    */
   public function testNewExceptable(
-    string $fqcn,
     int $code,
     ?array $context,
     ?Throwable $previous,
     string $message
   ) : void {
+    $fqcn = $this->exceptableFQCN();
+
     if (isset($previous)) {
       $line = __LINE__ + 1;
       $actual = new $fqcn($code, $context, $previous);
@@ -85,12 +83,13 @@ class IsExceptableTest extends TestCase {
    * @dataProvider newExceptableProvider
    */
   public function testCreateExceptable(
-    string $fqcn,
     int $code,
     ?array $context,
     ?Throwable $previous,
     string $message
   ) : void {
+    $fqcn = $this->exceptableFQCN();
+
     if (isset($previous)) {
       $line = __LINE__ + 1;
       $actual = $fqcn::create($code, $context, $previous);
@@ -116,13 +115,14 @@ class IsExceptableTest extends TestCase {
    * @dataProvider newExceptableProvider
    */
   public function testThrowExceptable(
-    string $fqcn,
     int $code,
     ?array $context,
     ?Throwable $previous,
     string $message
   ) : void {
     try {
+    $fqcn = $this->exceptableFQCN();
+
       $actual = null;
       if (isset($previous)) {
         $line = __LINE__ + 1;
@@ -155,28 +155,24 @@ class IsExceptableTest extends TestCase {
   public function newExceptableProvider() : array {
     return [
       "UNKNOWN_FOO with code only" => [
-        __TestExceptable::class,
         __TestExceptable::UNKNOWN_FOO,
         null,
         null,
         "unknown foo"
       ],
       "UNKNOWN_FOO with context" => [
-        __TestExceptable::class,
         __TestExceptable::UNKNOWN_FOO,
         ["foo" => "foobedobedoo"],
         null,
         "i don't know who, you think is foo, but it's not foobedobedoo"
       ],
       "UNKNOWN_FOO with context and previous exception" => [
-        __TestExceptable::class,
         __TestExceptable::UNKNOWN_FOO,
         ["foo" => "foobedobedoo"],
         new Exception("it's not just you"),
         "i don't know who, you think is foo, but it's not foobedobedoo"
       ],
       "UNKNOWN_FOO with previous exception" => [
-        __TestExceptable::class,
         __TestExceptable::UNKNOWN_FOO,
         null,
         new Exception("it's not just you"),
@@ -184,28 +180,24 @@ class IsExceptableTest extends TestCase {
       ],
 
       "TOO_MUCH_FOO with code only" => [
-        __TestExceptable::class,
         __TestExceptable::TOO_MUCH_FOO,
         null,
         null,
         "too much foo"
       ],
       "TOO_MUCH_FOO with context" => [
-        __TestExceptable::class,
         __TestExceptable::TOO_MUCH_FOO,
         ["count" => 42],
         null,
         "too much foo is bad for you (got 42 foo)"
       ],
       "TOO_MUCH_FOO with context and previous exception" => [
-        __TestExceptable::class,
         __TestExceptable::TOO_MUCH_FOO,
         ["count" => 42],
         new Exception("it's not just you"),
         "too much foo is bad for you (got 42 foo)"
       ],
       "TOO_MUCH_FOO with previous exception" => [
-        __TestExceptable::class,
         __TestExceptable::TOO_MUCH_FOO,
         null,
         new Exception("it's not just you"),
@@ -217,11 +209,12 @@ class IsExceptableTest extends TestCase {
   /**
    * @dataProvider infoProvider
    *
-   * @param string $fqcn     Fully qualified classname of Exceptable to test
-   * @param int    $code     Known exceptable code to get info for
-   * @param array  $expected Information expected to be returned
+   * @param int   $code     Known exceptable code to get info for
+   * @param array $expected Information expected to be returned
    */
-  public function testGetInfo(string $fqcn, int $code, array $expected) : void {
+  public function testGetInfo(int $code, array $expected) : void {
+    $fqcn = $this->exceptableFQCN();
+
     $actual = $fqcn::getInfo($code);
 
     $this->assertIsArray($actual, "getInfo() did not return an array");
@@ -252,10 +245,11 @@ class IsExceptableTest extends TestCase {
   /**
    * @dataProvider infoProvider
    *
-   * @param string $fqcn     Fully qualified classname of Exceptable to test
-   * @param int    $code     Known exceptable code to get info for
+   * @param int $code Known exceptable code to get info for
    */
-  public function testHasInfo(string $fqcn, int $code) : void {
+  public function testHasInfo(int $code) : void {
+    $fqcn = $this->exceptableFQCN();
+
     $this->assertTrue($fqcn::hasInfo($code), "{$fqcn} reports it has no info for code {$code}");
   }
 
@@ -265,12 +259,10 @@ class IsExceptableTest extends TestCase {
   public function infoProvider() : array {
     return [
       "__TestExceptable::UNKNOWN_FOO" => [
-        __TestExceptable::class,
         __TestExceptable::UNKNOWN_FOO,
         __TestExceptable::INFO[__TestExceptable::UNKNOWN_FOO]
       ],
       "__TestExceptable::TOO_MUCH_FOO" => [
-        __TestExceptable::class,
         __TestExceptable::TOO_MUCH_FOO,
         __TestExceptable::INFO[__TestExceptable::TOO_MUCH_FOO]
       ]
@@ -280,10 +272,11 @@ class IsExceptableTest extends TestCase {
   /**
    * @dataProvider badInfoProvider
    *
-   * @param string $fqcn Fully qualified classname of Exceptable to test
-   * @param int    $code Unknown exceptable code to get info for
+   * @param int $code Unknown exceptable code to get info for
    */
-  public function testGetBadInfo(string $fqcn, int $code) : void {
+  public function testGetBadInfo(int $code) : void {
+    $fqcn = $this->exceptableFQCN();
+
     $this->expectThrowable(
       new ExceptableException(ExceptableException::NO_SUCH_CODE, ["code" => $code]),
       self::EXPECT_THROWABLE_CODE | self::EXPECT_THROWABLE_MESSAGE
@@ -295,10 +288,11 @@ class IsExceptableTest extends TestCase {
   /**
    * @dataProvider badInfoProvider
    *
-   * @param string $fqcn     Fully qualified classname of Exceptable to test
-   * @param int    $code     Known exceptable code to get info for
+   * @param int $code Known exceptable code to get info for
    */
-  public function testNotHasInfo(string $fqcn, int $code) : void {
+  public function testNotHasInfo(int $code) : void {
+    $fqcn = $this->exceptableFQCN();
+
     $this->assertFalse($fqcn::hasInfo($code), "{$fqcn} reports it has info for code {$code}");
   }
 
@@ -306,16 +300,17 @@ class IsExceptableTest extends TestCase {
    * @return array[] Testcases - @see testGetBadInfo()
    */
   public function badInfoProvider() : array {
-    return [[__TestExceptable::class, 66]];
+    return [[66]];
   }
 
   /**
    * @dataProvider isProvider
    *
-   * @param string $fqcn Fully qualified classname of Exceptable to test
-   * @param int    $code Unknown exceptable code to get info for
+   * @param int $code Unknown exceptable code to get info for
    */
-  public function testIs(string $fqcn, int $code, Throwable $e, bool $expected) : void {
+  public function testIs(int $code, Throwable $e, bool $expected) : void {
+    $fqcn = $this->exceptableFQCN();
+
     $e_code = get_class($e) . "::{$e->getCode()}";
 
     if ($expected) {
@@ -336,31 +331,26 @@ class IsExceptableTest extends TestCase {
   public function isProvider() : array {
     return [
       "same class and code" => [
-        __TestExceptable::class,
         __TestExceptable::UNKNOWN_FOO,
         new __TestExceptable(__TestExceptable::UNKNOWN_FOO),
         true
       ],
       "same class, different code" => [
-        __TestExceptable::class,
         __TestExceptable::UNKNOWN_FOO,
         new __TestExceptable(__TestExceptable::TOO_MUCH_FOO),
         false
       ],
       "subclass, same code" => [
-        __TestExceptable::class,
         __TestExceptable::UNKNOWN_FOO,
         new class (__TestExceptable::UNKNOWN_FOO) extends __TestExceptable {},
         false
       ],
       "non-exceptable, same code" => [
-        __TestExceptable::class,
         __TestExceptable::UNKNOWN_FOO,
         new Exception("", __TestExceptable::TOO_MUCH_FOO),
         false
       ],
       "non-exceptable, different code" => [
-        __TestExceptable::class,
         __TestExceptable::UNKNOWN_FOO,
         new Exception("", 66),
         false
@@ -371,7 +361,6 @@ class IsExceptableTest extends TestCase {
   /**
    * @dataProvider localizationProvider
    *
-   * @param string $fqcn            Fully qualified classname of Exceptable to test
    * @param string $locale          Locale to test
    * @param string $resource_bundle ICU resource bundle directory
    * @param int    $code            Exceptable code to test
@@ -379,7 +368,6 @@ class IsExceptableTest extends TestCase {
    * @param string $expected        Expected message (localized, formatted)
    */
   public function testLocalization(
-    string $fqcn,
     string $locale,
     string $resource_bundle,
     int $code,
@@ -390,6 +378,8 @@ class IsExceptableTest extends TestCase {
       $this->markTestSkipped("ext/intl is not loaded");
       return;
     }
+    $fqcn = $this->exceptableFQCN();
+
 
     $this->markTestIncomplete("not yet implemented");
   }
@@ -399,7 +389,7 @@ class IsExceptableTest extends TestCase {
    */
   public function localizationProvider() : array {
     return [
-      "@todo" => ["","","",0,[],""]
+      "@todo" => ["","",0,[],""]
     ];
   }
 
@@ -545,13 +535,12 @@ class IsExceptableTest extends TestCase {
   }
 
   /**
-   * Creates a new Exceptable instance for basic tests.
+   * The Fully-qualified Exceptable classname for this test.
    *
-   * @param mixed ...$args
-   * @return Exceptable
+   * @return string
    */
-  protected function newIsExceptable(...$args) : Exceptable {
-    return new __TestExceptable(...$args);
+  protected function exceptableFQCN() : string {
+    return __TestExceptable::class;
   }
 }
 
