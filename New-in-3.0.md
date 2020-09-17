@@ -1,10 +1,12 @@
 # Version 3.0 is Coming Soon!
 
+_Check out [the RC branch](https://github.com/php-enspired/exceptable/tree/3.0-rc)_.
+
 ## Requires PHP 7.3
 
 PHP 7.2 is now end-of-life. You shouldn't be using it!
 
-Note that this is a minimum requirement. [PHP 7.2 is now in security-only support and will be EOL on November 30, 2020](https://php.net/supported-versions). 
+Note that this is a minimum requirement. [PHP 7.2 is now in security-only support and will be EOL on November 30, 2020](https://php.net/supported-versions).
 
 Version 2 will be supported until that time as well, in order to give existing users time to migrate their projects to PHP 7.3 (or, better yet - PHP 7.4). On December 1st, however, version 2.0 will become unsupported.
 
@@ -16,9 +18,9 @@ When the intl extension is installed, Exceptables now support ICU localization, 
 
 ## Exceptable SPL Exceptions
 
-Exceptable versions of the built-in SPL Exceptions are now available. 
+Exceptable versions of the built-in SPL Exceptions are now available.
 
-These classes extend from their corresponding built-in Spl Exceptions, and can be used as-is (you'll get a generic message and code `1`), or extend them to build out your own error cases and take full advantage of their _Exceptable_ features.
+These classes extend from their corresponding built-in Spl Exceptions, and can be used as-is (you'll get a generic message and code), or extend them to build out your own error cases and take full advantage of their _Exceptable_ features.
 
 ## Debug Mode
 
