@@ -125,7 +125,7 @@ parameters:
 ```
 public array getContext( void )
 ```
-Gets contextual information about this Exceptable.  Info will vary depending on what information is provided at runtime.  At a minimum, will include "`__severity__`" (the Exceptable's severity) and "`__rootMessage__`" (which will be empty if no previous exception exists).
+Gets contextual information about this Exceptable.  Info will vary depending on what information is provided at runtime.  At a minimum, will include "`__rootMessage__`" (which will be the same as the top-level message if no previous exception exists).
 
 **returns** an array of contextual information about the Exceptable.
 
