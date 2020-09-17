@@ -92,6 +92,7 @@ parameters:
   The previous Exception, if any.
 
 **throws** `at\exceptable\Exceptable` on success.
+
 **throws** `at\exceptable\ExceptableException` if the given code is invalid.
 
 ---
