@@ -36,7 +36,10 @@ use AT\Exceptable\Exceptable;
 trait IsExceptable {
 
   /** @var string Preferred locale for messages. */
-  protected static $locale = "en";
+  protected static $locale;
+
+  /** @var string Default locale for messages (MUST NOT be modified at runtime). */
+  protected static $defaultLocale = "en";
 
   /** @var ResourceBundle ICU messages bundle. */
   protected static $messages;
@@ -198,7 +201,11 @@ trait IsExceptable {
     $format = $this->getMessageFormat($info["formatKey"] ?? null) ?? $info["format"];
     if (isset($format)) {
       if (extension_loaded("intl")) {
-        $message = MessageFormatter::formatMessage(static::$locale, $format, $this->context) ?:
+        $message = MessageFormatter::formatMessage(
+          static::$locale ?? static::$defaultLocale,
+          $format,
+          $this->context
+        ) ?:
           $info["message"];
 
         // :(

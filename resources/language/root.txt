@@ -5,5 +5,11 @@ root {
       no_such_code { "No exception code '{code}' is known" }
       uncaught_exception { "No registered handler caught exception: {__rootMessage__}" }
     }
+    tests {
+      testexceptable {
+        unknownfoo { "i don't know who, you think is foo, but it's not {foo}" }
+        toomuchfoo { "too much foo is bad for you (got {count,spellout} foo)" }
+      }
+    }
   }
 }

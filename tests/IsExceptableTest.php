@@ -21,6 +21,7 @@ declare(strict_types = 1);
 namespace AT\Exceptable\Tests;
 
 use Exception,
+  ResourceBundle,
   Throwable;
 
 use AT\Exceptable\ {
@@ -41,6 +42,14 @@ use AT\Exceptable\ {
  *  - override *Provider methods to provide appropriate input and expectations
  */
 class IsExceptableTest extends TestCase {
+
+  /**
+   * Path to resource bundle used for this test.
+   * This is specific to the base test suite and MUST NOT be used by child tests.
+   *
+   * @var string
+   */
+  private const RESOURCE_BUNDLE = __DIR__ . "/../resources/language/";
 
   /**
    * @dataProvider newExceptableProvider
@@ -363,25 +372,32 @@ class IsExceptableTest extends TestCase {
    *
    * @param string $locale          Locale to test
    * @param string $resource_bundle ICU resource bundle directory
-   * @param int    $code            Exceptable code to test
-   * @param array  $context         Contextual information
-   * @param string $expected        Expected message (localized, formatted)
    */
-  public function testLocalization(
-    string $locale,
-    string $resource_bundle,
-    int $code,
-    array $context,
-    string $expected
-  ) : void {
+  public function testLocalization(string $locale, string $resource_bundle) : void {
     if (! extension_loaded("intl")) {
       $this->markTestSkipped("ext/intl is not loaded");
       return;
     }
+
     $fqcn = $this->exceptableFQCN();
 
+    // assure clean state (localization not initialized)
+    $this->setNonpublicStaticProperty($fqcn, "locale", null);
+    $this->setNonpublicStaticProperty($fqcn, "messages", null);
 
-    $this->markTestIncomplete("not yet implemented");
+    $messages = new ResourceBundle($locale, $resource_bundle);
+    $fqcn::localize($locale, $messages);
+
+    $this->assertSame(
+      $this->getNonpublicStaticProperty($fqcn, "locale"),
+      $locale,
+      "\$locale does not contain expected locale '{$locale}'"
+    );
+    $this->assertSame(
+      $this->getNonpublicStaticProperty($fqcn, "messages"),
+      $messages,
+      "\$messages does not contain expected message bundle"
+    );
   }
 
   /**
@@ -389,7 +405,167 @@ class IsExceptableTest extends TestCase {
    */
   public function localizationProvider() : array {
     return [
-      "@todo" => ["","",0,[],""]
+      "root" => ["en", self::RESOURCE_BUNDLE],
+      "other" => ["ko_KR", self::RESOURCE_BUNDLE]
+    ];
+  }
+
+  /**
+   * @dataProvider localizedMessagesProvider
+   *
+   * @param ?string    $locale          Locale to test
+   * @param ?string    $resource_bundle ICU resource bundle directory
+   * @param int        $code            Exceptable code to test
+   * @param ?array     $context         Contextual information
+   * @param ?Throwable $previous        Previous exception to provide
+   * @param string     $expected        Expected message (localized, formatted)
+   */
+  public function testLocalizedMessages(
+    ?string $locale,
+    ?string $resource_bundle,
+    int $code,
+    ?array $context,
+    ?Throwable $previous,
+    string $expected
+  ) : void {
+    $fqcn = $this->exceptableFQCN();
+
+    // assure clean state (localization not initialized)
+    $this->setNonpublicStaticProperty($fqcn, "locale", null);
+    $this->setNonpublicStaticProperty($fqcn, "messages", null);
+
+    if (isset($locale, $resource_bundle)) {
+      if (! extension_loaded("intl")) {
+        $this->markTestSkipped("ext/intl is not loaded");
+        return;
+      }
+
+      $fqcn::localize($locale, new ResourceBundle($locale, $resource_bundle));
+    }
+
+    $this->assertSame(
+      $expected,
+      $fqcn::create($code, $context, $previous)->getMessage(),
+      "getMessage() does not report expected localized message"
+    );
+  }
+
+  /**
+   * ko_KR was chosen at random; I don't speak Korean nor have a translator.
+   * If someone would like to provide better (or more) translations, that would be welcome.
+   *
+   * @return array[] Testcases - @see testLocalizedMessages()
+   */
+  public function localizedMessagesProvider() : array {
+    return [
+      "no localization, no context" => [
+        null,
+        null,
+        __TestExceptable::UNKNOWN_FOO,
+        null,
+        null,
+        "unknown foo"
+      ],
+      "no localization, context" => [
+        null,
+        null,
+        __TestExceptable::UNKNOWN_FOO,
+        ["foo" => "foobedobedoo"],
+        null,
+        "i don't know who, you think is foo, but it's not foobedobedoo"
+      ],
+
+      "root localization, no context" => [
+        "en",
+        self::RESOURCE_BUNDLE,
+        __TestExceptable::UNKNOWN_FOO,
+        null,
+        null,
+        "unknown foo"
+      ],
+      "root localization, wrong context" => [
+        "en",
+        self::RESOURCE_BUNDLE,
+        __TestExceptable::UNKNOWN_FOO,
+        ["bar" => "none"],
+        null,
+        "unknown foo"
+      ],
+      "root localization, context" => [
+        "en",
+        self::RESOURCE_BUNDLE,
+        __TestExceptable::UNKNOWN_FOO,
+        ["foo" => "foobedobedoo"],
+        null,
+        "i don't know who, you think is foo, but it's not foobedobedoo"
+      ],
+
+      "other localization, no context" => [
+        "ko_KR",
+        self::RESOURCE_BUNDLE,
+        __TestExceptable::UNKNOWN_FOO,
+        null,
+        null,
+        "unknown foo"
+      ],
+      "other localization, wrong context" => [
+        "ko_KR",
+        self::RESOURCE_BUNDLE,
+        __TestExceptable::UNKNOWN_FOO,
+        ["bar" => "none"],
+        null,
+        "unknown foo"
+      ],
+      "other localization, context" => [
+        "ko_KR",
+        self::RESOURCE_BUNDLE,
+        __TestExceptable::UNKNOWN_FOO,
+        ["foo" => "foobedobedoo"],
+        null,
+        "나는 당신이 foo 라고 생각하는 사람을 모르지만 foobedobedoo 가 아닙니다"
+      ],
+
+      "no localization, complex format" => [
+        null,
+        null,
+        __TestExceptable::TOO_MUCH_FOO,
+        ["count" => 42],
+        null,
+        "too much foo is bad for you (got 42 foo)"
+      ],
+      "root localization, complex format" => [
+        "en",
+        self::RESOURCE_BUNDLE,
+        __TestExceptable::TOO_MUCH_FOO,
+        ["count" => 42],
+        null,
+        "too much foo is bad for you (got forty-two foo)"
+      ],
+      "other localization, complex format" => [
+        "ko_KR",
+        self::RESOURCE_BUNDLE,
+        __TestExceptable::TOO_MUCH_FOO,
+        ["count" => 42],
+        null,
+        "너무 많은 foo는 당신에게 나쁩니다 (사십이 foo를 얻었습니다)"
+      ],
+
+      "unsupported locale, no context" => [
+        "nd_ZW",
+        self::RESOURCE_BUNDLE,
+        __TestExceptable::UNKNOWN_FOO,
+        null,
+        null,
+        "unknown foo"
+      ],
+      "unsupported locale, with localization and context" => [
+        "nd_ZW",
+        self::RESOURCE_BUNDLE,
+        __TestExceptable::UNKNOWN_FOO,
+        ["foo" => "foobedobedoo"],
+        null,
+        "i don't know who, you think is foo, but it's not foobedobedoo"
+      ]
     ];
   }
 
@@ -554,11 +730,13 @@ class __TestExceptable extends Exception implements Exceptable {
   const INFO = [
     self::UNKNOWN_FOO => [
       "message" => "unknown foo",
-      "format" => "i don't know who, you think is foo, but it's not {foo}"
+      "format" => "i don't know who, you think is foo, but it's not {foo}",
+      "formatKey" => "exceptable.tests.testexceptable.unknownfoo"
     ],
     self::TOO_MUCH_FOO => [
       "message" => "too much foo",
-      "format" => "too much foo is bad for you (got {count} foo)"
+      "format" => "too much foo is bad for you (got {count} foo)",
+      "formatKey" => "exceptable.tests.testexceptable.toomuchfoo"
     ]
   ];
 }

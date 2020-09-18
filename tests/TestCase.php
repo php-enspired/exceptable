@@ -21,6 +21,8 @@ declare(strict_types = 1);
 namespace AT\Exceptable\Tests;
 
 use BadMethodCallException,
+  ReflectionClass,
+  ReflectionObject,
   Throwable;
 
 use PHPUnit\Framework\TestCase as PhpUnitTestCase;
@@ -75,6 +77,26 @@ abstract class TestCase extends PhpUnitTestCase {
   }
 
   /**
+   * Gets the value of a nonpublic static property of class under test.
+   *
+   * @param string $fqcn     FQCN of the class to modify
+   * @param string $property The property to access
+   * @return mixed           Property value on success
+   */
+  protected function getNonpublicStaticProperty(string $fqcn, string $property) {
+    $rc = new ReflectionClass($fqcn);
+    if (! $rc->hasProperty($property)) {
+      throw new BadMethodCallException(
+        "Class {$fqcn} has no property '{$property}'"
+      );
+    }
+
+    $rp = $rc->getProperty($property);
+    $rp->setAccessible(true);
+    return $rp->getValue();
+  }
+
+  /**
    * Invokes a nonpublic method on an object under test.
    *
    * Note, it's VERY EASY to BREAK EVERYTHING using this method.
@@ -118,5 +140,28 @@ abstract class TestCase extends PhpUnitTestCase {
     $rp = $ro->getProperty($property);
     $rp->setAccessible(true);
     $rp->setValue($object, $value);
+  }
+
+  /**
+   * Sets the value of a nonpublic static property of a class under test.
+   *
+   * Note, it's VERY EASY to BREAK EVERYTHING using this method.
+   *
+   * @param string $fqcn     FQCN of class to modify
+   * @param string $property Property to set
+   * @param mixed  $value    Value to set
+   * @return void
+   */
+  protected function setNonpublicStaticProperty(string $fcqn, string $property, $value) : void {
+    $rc = new ReflectionClass($fcqn);
+    if (! $rc->hasProperty($property)) {
+      throw new BadMethodCallException(
+        "Class {$fqcn} has no property '{$property}'"
+      );
+    }
+
+    $rp = $rc->getProperty($property);
+    $rp->setAccessible(true);
+    $rp->setValue($value);
   }
 }
