@@ -34,7 +34,6 @@ use AT\Exceptable\ {
 /**
  * Basic tests for the default Exceptable implementation (the IsExceptable trait).
  *
- * @covers AT\Exceptable\Exceptable
  * @covers AT\Exceptable\IsExceptable
  *
  * This test case can (should) be extended to test other concrete implementations:
@@ -684,30 +683,6 @@ class IsExceptableTest extends TestCase {
       $actual->getRoot(),
       "getPrevious() does not report expected root exception ({$fqcn})"
     );
-  }
-
-  /**
-   * Returns a string representation of the given value.
-   *
-   * @param mixed $value Value to encode
-   * @return string      String representation of the value
-   */
-  protected function asString($value) : string {
-    if (is_scalar($value) || is_callable([$value, "__toString"])) {
-      return (string) $value;
-    }
-
-    try {
-      $json = json_encode(
-        $value,
-        JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
-      );
-      return is_object($value) ?
-        get_class($value) . " " . $json :
-        $json;
-    } catch (JsonException $e) {
-      return is_object($value) ? get_class($value) : gettype($value);
-    }
   }
 
   /**

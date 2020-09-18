@@ -57,6 +57,34 @@ abstract class TestCase extends PhpUnitTestCase {
   }
 
   /**
+   * Returns a string representation of the given value.
+   *
+   * @param mixed $value Value to encode
+   * @return string      String representation of the value
+   */
+  protected function asString($value) : string {
+    if ($value instanceof Throwable) {
+      return get_class($value) . "::" . ($value->getCode() ?: $value->getMessage());
+    }
+
+    if (is_scalar($value) || is_callable([$value, "__toString"])) {
+      return (string) $value;
+    }
+
+    try {
+      $json = json_encode(
+        $value,
+        JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
+      );
+      return is_object($value) ?
+        get_class($value) . " " . $json :
+        $json;
+    } catch (JsonException $e) {
+      return is_object($value) ? get_class($value) : gettype($value);
+    }
+  }
+
+  /**
    * Gets the value of a nonpublic property of an object under test.
    *
    * @param object $object   The object to inspect

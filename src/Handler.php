@@ -21,6 +21,7 @@ declare(strict_types = 1);
 namespace AT\Exceptable;
 
 use ErrorException,
+  Exception,
   Throwable;
 
 use AT\Exceptable\ExceptableException;
@@ -32,7 +33,7 @@ use Psr\Log\ {
 };
 
 /**
- *
+ * Exceptable Handler
  */
 class Handler implements LoggerAware {
 
@@ -45,13 +46,20 @@ class Handler implements LoggerAware {
   /** @var array[] List of errors/exceptions encountered in debug mode. */
   protected $errors = [];
 
-  /** @var callable[] List of registered exception handlers, indexed by Throwable FQCN to catch. */
+  /**
+   * @var callable[][] $exceptionHandlers List of registered exception handlers,
+   *  indexed by Throwable FQCN to catch.
+   * @var callable[] $rootExceptionHandlers List of registered \Exception handlers.
+   * @var callable[] $rootThrowableHandlers List of registered \Throwable handlers.
+   */
   protected $exceptionHandlers = [];
+  protected $rootExceptionHandlers = [];
+  protected $rootThrowableHandlers = [];
 
   /** @var Logger Logging mechanism. */
   protected $logger;
 
-  /** @var callable[] List of registered shutdown handlers. */
+  /** @var array<callable,mixed[]>[] List of registered shutdown handlers. */
   protected $shutdownHandlers = [];
 
   /** @var bool Is this Handler currently registered (active)? */
@@ -66,8 +74,8 @@ class Handler implements LoggerAware {
   /**
    * Sets debug mode (tracks and traces all errors and exceptions).
    *
-   * @param bool $debug  Debug?
-   * @return Handler     $this
+   * @param bool $debug Debug?
+   * @return Handler    $this
    */
   public function debug(bool $debug = true) : Handler {
     $this->debug = $debug;
@@ -107,6 +115,93 @@ class Handler implements LoggerAware {
   }
 
   /**
+   * Handles php errors.
+   *
+   * @param int    $c       Error code
+   * @param string $m       Error message
+   * @param string $f       Error file
+   * @param int    $l       Error line
+   * @throws ErrorException If error severity matches $_throw setting
+   * @return bool           True if error handled; false if php's error handler should continue
+   */
+  public function handleError(int $c, string $m, string $f, int $l) : bool {
+    $error = [
+      "code" => $c,
+      "message" => $m,
+      "file" => $f,
+      "line" => $l
+    ];
+
+    if (! $this->scream && error_reporting() === 0) {
+      $this->logError(true, $error);
+      return true;
+    }
+
+    if (($c & $this->throw) === $c) {
+      throw new ErrorException($m, $c, $c, $f, $l);
+    }
+
+    foreach ($this->errorHandlers as $severity => $handlers) {
+      if (($c & $severity) === $c) {
+        foreach ($handlers as $handler) {
+          if ($handler($c, $m, $f, $l) === true) {
+            $this->logError(true, $error);
+            return true;
+          }
+        }
+      }
+    }
+
+    $this->logError(false, $error);
+    return false;
+  }
+
+  /**
+   * Handles uncaught exceptions.
+   *
+   * @param Throwable $e         The uncaught exception
+   * @throws ExceptableException If no registered handler handles the exception
+   */
+  public function handleException(Throwable $e) : void {
+    $allHandlers = $this->exceptionHandlers +
+      [Exception::class => $this->rootExceptionHandlers] +
+      [Throwable::class => $this->rootThrowableHandlers];
+
+    foreach ($allHandlers as $catches => $handlers) {
+      foreach ($handlers as $handler) {
+        if ($e instanceof $catches && $handler($e) === true) {
+          if ($this->debug) {
+            $this->logException(true, $e);
+          }
+          return;
+        }
+      }
+    }
+
+    $this->logException(false, $e);
+    throw new ExceptableException(ExceptableException::UNCAUGHT_EXCEPTION, [], $e);
+  }
+
+  /**
+   * Handles shutdown sequence;
+   * triggers errorHandler() if shutdown was due to a fatal error.
+   */
+  public function handleShutdown() : void {
+    if (! $this->registered) {
+      return;
+    }
+
+    $e = error_get_last();
+    if ($e && $e['type'] === E_ERROR) {
+      $this->handleError($e['type'], $e['message'], $e['file'], $e['line']);
+    }
+
+    foreach ($this->shutdownHandlers as [$handler, $arguments]) {
+      $handler(...$arguments);
+    }
+  }
+
+  /**
    * Adds an error handler.
    * @see <http://php.net/set_error_handler> $error_handler
    *
@@ -131,7 +226,15 @@ class Handler implements LoggerAware {
    */
   public function onException(callable $handler, array $catches = [Throwable::class]) : Handler {
     foreach ($catches as $catch) {
-      $this->exceptionHandlers[$catch] = $handler;
+      if ($catch === Throwable::class) {
+        $this->rootThrowableHandlers[] = $handler;
+        continue;
+      }
+      if ($catch === Exception::class) {
+        $this->rootExceptionHandlers[] = $handler;
+        continue;
+      }
+      $this->exceptionHandlers[$catch][] = $handler;
     }
 
     return $this;
@@ -249,87 +352,6 @@ class Handler implements LoggerAware {
   }
 
   /**
-   * Handles php errors.
-   *
-   * @param int    $c       Error code
-   * @param string $m       Error message
-   * @param string $f       Error file
-   * @param int    $l       Error line
-   * @throws ErrorException If error severity matches $_throw setting
-   * @return bool           True if error handled; false if php's error handler should continue
-   */
-  protected function handleError(int $c, string $m, string $f, int $l) : bool {
-    $error = [
-      "code" => $c,
-      "message" => $m,
-      "file" => $f,
-      "line" => $l
-    ];
-
-    if (! $this->scream && error_reporting() === 0) {
-      $this->logError(true, $error);
-      return true;
-    }
-
-    if (($c & $this->throw) === $c) {
-      throw new ErrorException($m, 0, $c, $f, $l);
-    }
-
-    foreach ($this->errorHandlers as $severity => $handlers) {
-      if (($c & $severity) === $c) {
-        foreach ($handlers as $handler) {
-          if ($handler($c, $m, $f, $l) === true) {
-            $this->logError(true, $error);
-            return true;
-          }
-        }
-      }
-    }
-
-    $this->logError(false, $error);
-    return false;
-  }
-
-  /**
-   * Handles uncaught exceptions.
-   *
-   * @param Throwable $e         The uncaught exception
-   * @throws ExceptableException If no registered handler handles the exception
-   */
-  protected function handleException(Throwable $e) : void {
-    foreach ($this->exceptionHandlers as $catches => $handler) {
-      if ($e instanceof $catches && $handler($e) === true) {
-        if ($this->debug) {
-          $this->logException(true, $e);
-        }
-        return;
-      }
-    }
-
-    $this->logException(false, $e);
-    throw new ExceptableException(ExceptableException::UNCAUGHT_EXCEPTION, [], $e);
-  }
-
-  /**
-   * Handles shutdown sequence;
-   * triggers errorHandler() if shutdown was due to a fatal error.
-   */
-  protected function handleShutdown() : void {
-    $e = error_get_last();
-    if ($e && $e['type'] === E_ERROR) {
-      $this->handleError($e['type'], $e['message'], $e['file'], $e['line']);
-    }
-
-    if (! $this->registered) {
-      return;
-    }
-
-    foreach ($this->shutdownHandlers as [$handler, $arguments]) {
-      $handler(...$arguments);
-    }
-  }
-
-  /**
    * Logs an error according to debug settings and logger availability.
    *
    * The following information is passed to the logger:
@@ -344,8 +366,8 @@ class Handler implements LoggerAware {
    * If debug mode is enabled, a backtrace is added as well:
    *  - array  $trace      Backtrace
    *
-   * @param bool      $handled   Was this error handled by a registered handler?
-   * @param array $error       Error details
+   * @param bool  $handled   Was this error handled by a registered handler?
+   * @param array $error     Error details
    */
   protected function logError(bool $handled, array $error) : void {
     $error = [
@@ -384,12 +406,12 @@ class Handler implements LoggerAware {
    * Logs an exception according to debug settings and logger availability.
    *
    * The following information is passed to the logger:
-   *  - float  $time       Unixtime error was logged, with microsecond precision
-   *  - string $type       Always "exception"
-   *  - bool   $handled    Was this error handled by a registered handler?
-   *  - int    $exception  Exception
+   *  - float  $time      Unixtime error was logged, with microsecond precision
+   *  - string $type      Always "exception"
+   *  - bool   $handled   Was this error handled by a registered handler?
+   *  - int    $exception Exception
    *
-   * @param bool      $handled Was this error handled by a registered handler?
+   * @param bool      $handled Was this exception handled by a registered handler?
    * @param Throwable $e       The exception instance
    */
   protected function logException(bool $handled, Throwable $e) : void {
