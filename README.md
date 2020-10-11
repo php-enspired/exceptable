@@ -14,8 +14,6 @@ Requires php 7.3 or later.
 
 ICU support requires the `intl` extension.
 
-**Version 3.0 will require php 7.3** or greater; and ICU support will require the `intl` extension.
-
 installation
 ------------
 
@@ -59,30 +57,12 @@ throw new FooException(FooException::UNKNOWN_FOO, $context);
 
 see more in [the wiki](https://github.com/php-enspired/exceptable/wiki).
 
-<<<<<<< HEAD
 Version 2 will reach End-of-Life on November 30, 2020.
 ------------------------------------------------------
 
-Version 3.0 is coming soon!
----------------------------
+Version 3.0 is here!
+--------------------
 
-Version 3 will require PHP 7.3 or greater and introduces some exciting changes from version 2:
-- Support* for ICU locales, message formats, and resource bundles!\
-  \* _requires the intl extension._
-- Ready-to-extend (or just use) `Exceptable` classes based on the built-in SPL Exception classes!
-- The generic `Exceptable` Exception base class has been removed.
-- Introduces a "debug mode" for Handlers!
-- Handlers are now Logger (e.g., Monolog)-aware!
-=======
-Version 3.0 will reach End-of-Life on November 30, 2020.
---------------------------------------------------------
->>>>>>> 3.0-rc
-
-docs
-----
-
-<<<<<<< HEAD
-=======
 **Version 3.0** requires PHP 7.3 or greater and introduces some exciting changes from version 2:
 - Support* for ICU locales, message formats, and resource bundles!\
   \* _requires the intl extension._
@@ -91,15 +71,14 @@ docs
 - Introduces a "debug mode" for Handlers!
 - Handlers are now Logger (e.g., Monolog)-aware!
 
->>>>>>> 3.0-rc
 [Read more about the 3.0 release](https://github.com/php-enspired/exceptable/wiki/new-in-3.0).
+
+docs
+----
 
 - API:
   - [The Exceptable Interface](https://github.com/php-enspired/exceptable/wiki/API:-The-Exceptable-Interface)
-<<<<<<< HEAD
   - [SPL Exception Classes](https://github.com/php-enspired/exceptable/wiki/API:-SPL-Exception-Classes)
-=======
->>>>>>> 3.0-rc
   - [The Handler Class](https://github.com/php-enspired/exceptable/wiki/API:-The-Handler-Class)
 - [Basic Exceptable Usage](https://github.com/php-enspired/exceptable/wiki/Usage:-Exceptables)
 - [Basic Handler Usage](https://github.com/php-enspired/exceptable/wiki/Usage:-Handlers)
