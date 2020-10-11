@@ -2,7 +2,7 @@
 /**
  * @package    at.exceptable
  * @author     Adrian <adrian@enspi.red>
- * @copyright  2014 - 2016
+ * @copyright  2014 - 2020
  * @license    GPL-3.0 (only)
  *
  *  This program is free software: you can redistribute it and/or modify it
@@ -292,7 +292,7 @@ class Handler implements LoggerAware {
    *                    (defaults to E_ERROR|E_WARNING; use 0 to stop throwing)
    * @return Handler   $this
    */
-  public function throwErrors(int $types=E_ERROR|E_WARNING) : Handler {
+  public function throwErrors(int $types = E_ERROR | E_WARNING) : Handler {
     $this->throw = $types;
 
     return $this;

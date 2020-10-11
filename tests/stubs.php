@@ -1,6 +1,7 @@
 <?php
 /**
  * @package    at.exceptable
+ * @subpackage tests
  * @author     Adrian <adrian@enspi.red>
  * @copyright  2014 - 2020
  * @license    GPL-3.0 (only)

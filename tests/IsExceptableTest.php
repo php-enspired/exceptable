@@ -1,6 +1,7 @@
 <?php
 /**
  * @package    at.exceptable
+ * @subpackage tests
  * @author     Adrian <adrian@enspi.red>
  * @copyright  2014 - 2020
  * @license    GPL-3.0 (only)
@@ -163,50 +164,50 @@ class IsExceptableTest extends TestCase {
   public function newExceptableProvider() : array {
     return [
       "UNKNOWN_FOO with code only" => [
-        __TestExceptable::UNKNOWN_FOO,
+        TestExceptable::UNKNOWN_FOO,
         null,
         null,
         "unknown foo"
       ],
       "UNKNOWN_FOO with context" => [
-        __TestExceptable::UNKNOWN_FOO,
+        TestExceptable::UNKNOWN_FOO,
         ["foo" => "foobedobedoo"],
         null,
         "i don't know who, you think is foo, but it's not foobedobedoo"
       ],
       "UNKNOWN_FOO with context and previous exception" => [
-        __TestExceptable::UNKNOWN_FOO,
+        TestExceptable::UNKNOWN_FOO,
         ["foo" => "foobedobedoo"],
         new Exception("it's not just you"),
         "i don't know who, you think is foo, but it's not foobedobedoo"
       ],
       "UNKNOWN_FOO with previous exception" => [
-        __TestExceptable::UNKNOWN_FOO,
+        TestExceptable::UNKNOWN_FOO,
         null,
         new Exception("it's not just you"),
         "unknown foo"
       ],
 
       "TOO_MUCH_FOO with code only" => [
-        __TestExceptable::TOO_MUCH_FOO,
+        TestExceptable::TOO_MUCH_FOO,
         null,
         null,
         "too much foo"
       ],
       "TOO_MUCH_FOO with context" => [
-        __TestExceptable::TOO_MUCH_FOO,
+        TestExceptable::TOO_MUCH_FOO,
         ["count" => 42],
         null,
         "too much foo is bad for you (got 42 foo)"
       ],
       "TOO_MUCH_FOO with context and previous exception" => [
-        __TestExceptable::TOO_MUCH_FOO,
+        TestExceptable::TOO_MUCH_FOO,
         ["count" => 42],
         new Exception("it's not just you"),
         "too much foo is bad for you (got 42 foo)"
       ],
       "TOO_MUCH_FOO with previous exception" => [
-        __TestExceptable::TOO_MUCH_FOO,
+        TestExceptable::TOO_MUCH_FOO,
         null,
         new Exception("it's not just you"),
         "too much foo"
@@ -266,13 +267,13 @@ class IsExceptableTest extends TestCase {
    */
   public function infoProvider() : array {
     return [
-      "__TestExceptable::UNKNOWN_FOO" => [
-        __TestExceptable::UNKNOWN_FOO,
-        __TestExceptable::INFO[__TestExceptable::UNKNOWN_FOO]
+      "TestExceptable::UNKNOWN_FOO" => [
+        TestExceptable::UNKNOWN_FOO,
+        TestExceptable::INFO[TestExceptable::UNKNOWN_FOO]
       ],
-      "__TestExceptable::TOO_MUCH_FOO" => [
-        __TestExceptable::TOO_MUCH_FOO,
-        __TestExceptable::INFO[__TestExceptable::TOO_MUCH_FOO]
+      "TestExceptable::TOO_MUCH_FOO" => [
+        TestExceptable::TOO_MUCH_FOO,
+        TestExceptable::INFO[TestExceptable::TOO_MUCH_FOO]
       ]
     ];
   }
@@ -339,27 +340,27 @@ class IsExceptableTest extends TestCase {
   public function isProvider() : array {
     return [
       "same class and code" => [
-        __TestExceptable::UNKNOWN_FOO,
-        new __TestExceptable(__TestExceptable::UNKNOWN_FOO),
+        TestExceptable::UNKNOWN_FOO,
+        new TestExceptable(TestExceptable::UNKNOWN_FOO),
         true
       ],
       "same class, different code" => [
-        __TestExceptable::UNKNOWN_FOO,
-        new __TestExceptable(__TestExceptable::TOO_MUCH_FOO),
+        TestExceptable::UNKNOWN_FOO,
+        new TestExceptable(TestExceptable::TOO_MUCH_FOO),
         false
       ],
       "subclass, same code" => [
-        __TestExceptable::UNKNOWN_FOO,
-        new class (__TestExceptable::UNKNOWN_FOO) extends __TestExceptable {},
+        TestExceptable::UNKNOWN_FOO,
+        new class (TestExceptable::UNKNOWN_FOO) extends TestExceptable {},
         false
       ],
       "non-exceptable, same code" => [
-        __TestExceptable::UNKNOWN_FOO,
-        new Exception("", __TestExceptable::TOO_MUCH_FOO),
+        TestExceptable::UNKNOWN_FOO,
+        new Exception("", TestExceptable::TOO_MUCH_FOO),
         false
       ],
       "non-exceptable, different code" => [
-        __TestExceptable::UNKNOWN_FOO,
+        TestExceptable::UNKNOWN_FOO,
         new Exception("", 66),
         false
       ]
@@ -450,7 +451,7 @@ class IsExceptableTest extends TestCase {
   }
 
   /**
-   * ko_KR was chosen at random; I don't speak Korean nor have a translator.
+   * ko_KR was chosen at random; I don't speak Korean nor do I have a translator.
    * If someone would like to provide better (or more) translations, that would be welcome.
    *
    * @return array[] Testcases - @see testLocalizedMessages()
@@ -460,7 +461,7 @@ class IsExceptableTest extends TestCase {
       "no localization, no context" => [
         null,
         null,
-        __TestExceptable::UNKNOWN_FOO,
+        TestExceptable::UNKNOWN_FOO,
         null,
         null,
         "unknown foo"
@@ -468,7 +469,7 @@ class IsExceptableTest extends TestCase {
       "no localization, context" => [
         null,
         null,
-        __TestExceptable::UNKNOWN_FOO,
+        TestExceptable::UNKNOWN_FOO,
         ["foo" => "foobedobedoo"],
         null,
         "i don't know who, you think is foo, but it's not foobedobedoo"
@@ -477,7 +478,7 @@ class IsExceptableTest extends TestCase {
       "root localization, no context" => [
         "en",
         self::RESOURCE_BUNDLE,
-        __TestExceptable::UNKNOWN_FOO,
+        TestExceptable::UNKNOWN_FOO,
         null,
         null,
         "unknown foo"
@@ -485,7 +486,7 @@ class IsExceptableTest extends TestCase {
       "root localization, wrong context" => [
         "en",
         self::RESOURCE_BUNDLE,
-        __TestExceptable::UNKNOWN_FOO,
+        TestExceptable::UNKNOWN_FOO,
         ["bar" => "none"],
         null,
         "unknown foo"
@@ -493,7 +494,7 @@ class IsExceptableTest extends TestCase {
       "root localization, context" => [
         "en",
         self::RESOURCE_BUNDLE,
-        __TestExceptable::UNKNOWN_FOO,
+        TestExceptable::UNKNOWN_FOO,
         ["foo" => "foobedobedoo"],
         null,
         "i don't know who, you think is foo, but it's not foobedobedoo"
@@ -502,7 +503,7 @@ class IsExceptableTest extends TestCase {
       "other localization, no context" => [
         "ko_KR",
         self::RESOURCE_BUNDLE,
-        __TestExceptable::UNKNOWN_FOO,
+        TestExceptable::UNKNOWN_FOO,
         null,
         null,
         "unknown foo"
@@ -510,7 +511,7 @@ class IsExceptableTest extends TestCase {
       "other localization, wrong context" => [
         "ko_KR",
         self::RESOURCE_BUNDLE,
-        __TestExceptable::UNKNOWN_FOO,
+        TestExceptable::UNKNOWN_FOO,
         ["bar" => "none"],
         null,
         "unknown foo"
@@ -518,7 +519,7 @@ class IsExceptableTest extends TestCase {
       "other localization, context" => [
         "ko_KR",
         self::RESOURCE_BUNDLE,
-        __TestExceptable::UNKNOWN_FOO,
+        TestExceptable::UNKNOWN_FOO,
         ["foo" => "foobedobedoo"],
         null,
         "나는 당신이 foo 라고 생각하는 사람을 모르지만 foobedobedoo 가 아닙니다"
@@ -527,7 +528,7 @@ class IsExceptableTest extends TestCase {
       "no localization, complex format" => [
         null,
         null,
-        __TestExceptable::TOO_MUCH_FOO,
+        TestExceptable::TOO_MUCH_FOO,
         ["count" => 42],
         null,
         "too much foo is bad for you (got 42 foo)"
@@ -535,7 +536,7 @@ class IsExceptableTest extends TestCase {
       "root localization, complex format" => [
         "en",
         self::RESOURCE_BUNDLE,
-        __TestExceptable::TOO_MUCH_FOO,
+        TestExceptable::TOO_MUCH_FOO,
         ["count" => 42],
         null,
         "too much foo is bad for you (got forty-two foo)"
@@ -543,7 +544,7 @@ class IsExceptableTest extends TestCase {
       "other localization, complex format" => [
         "ko_KR",
         self::RESOURCE_BUNDLE,
-        __TestExceptable::TOO_MUCH_FOO,
+        TestExceptable::TOO_MUCH_FOO,
         ["count" => 42],
         null,
         "너무 많은 foo는 당신에게 나쁩니다 (사십이 foo를 얻었습니다)"
@@ -552,7 +553,7 @@ class IsExceptableTest extends TestCase {
       "unsupported locale, no context" => [
         "nd_ZW",
         self::RESOURCE_BUNDLE,
-        __TestExceptable::UNKNOWN_FOO,
+        TestExceptable::UNKNOWN_FOO,
         null,
         null,
         "unknown foo"
@@ -560,7 +561,7 @@ class IsExceptableTest extends TestCase {
       "unsupported locale, with localization and context" => [
         "nd_ZW",
         self::RESOURCE_BUNDLE,
-        __TestExceptable::UNKNOWN_FOO,
+        TestExceptable::UNKNOWN_FOO,
         ["foo" => "foobedobedoo"],
         null,
         "i don't know who, you think is foo, but it's not foobedobedoo"
@@ -691,12 +692,12 @@ class IsExceptableTest extends TestCase {
    * @return string
    */
   protected function exceptableFQCN() : string {
-    return __TestExceptable::class;
+    return TestExceptable::class;
   }
 }
 
 /** Default test class. */
-class __TestExceptable extends Exception implements Exceptable {
+class TestExceptable extends Exception implements Exceptable {
   use IsExceptable;
 
   const UNKNOWN_FOO = 1;

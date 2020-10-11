@@ -1,6 +1,7 @@
 <?php
 /**
  * @package    at.exceptable
+ * @subpackage tests
  * @author     Adrian <adrian@enspi.red>
  * @copyright  2014 - 2020
  * @license    GPL-3.0 (only)
@@ -31,6 +32,11 @@ use AT\Exceptable\ {
   Handler,
   IsExceptable,
   Tests\TestCase
+};
+
+use Psr\Log\ {
+  LoggerInterface as Logger,
+  LogLevel
 };
 
 /**
@@ -106,20 +112,6 @@ class HandlerTest extends TestCase {
     $this->assertEmpty($handler->getDebugLog(), "debug mode logged items after disabled");
   }
 
-  /**
-   *
-   */
-  public function testErrorLogging() : void {
-    $this->markTestIncomplete();
-  }
-
-  /**
-   *
-   */
-  public function testExceptionLogging() : void {
-    $this->markTestIncomplete();
-  }
-
   public function testHandleException() : void {
     $e = new Exception("should be handled in the end");
     (new Handler())
@@ -145,6 +137,48 @@ class HandlerTest extends TestCase {
       ->handleException($e);
   }
 
+  public function testLogsError() : void {
+    $handler = new Handler();
+
+    $logger = new TestLogger();
+    $handler->setLogger($logger);
+
+    $code = E_WARNING;
+    $message = "Warning: example";
+    $handler->handleError($code, $message, __FILE__, __LINE__);
+
+    $this->assertCount(1, $logger->log);
+    $log = $logger->log[0];
+    $this->assertSame(LogLevel::WARNING, $log[0]);
+    $this->assertSame($message, $log[1]);
+  }
+
+  public function testLogsDebugError() : void {
+    $handler = new Handler();
+
+    $logger = new TestLogger();
+    $handler->setLogger($logger);
+    $handler->debug();
+
+    $code = E_WARNING;
+    $message = "Warning: example";
+    $handler->handleError($code, $message, __FILE__, __LINE__);
+
+    $this->assertCount(2, $logger->log);
+
+    $debug = $logger->log[0];
+    $this->assertSame(LogLevel::DEBUG, $debug[0]);
+    $this->assertSame($message, $debug[1]);
+
+    $warning = $logger->log[1];
+    $this->assertSame(LogLevel::WARNING, $warning[0]);
+    $this->assertSame($message, $warning[1]);
+  }
+
+  public function testLogsException() : void {
+    $this->markTestIncomplete();
+  }
+
   public function testRegister() : void {
     $handler = (new Handler())->register();
 
@@ -153,7 +187,7 @@ class HandlerTest extends TestCase {
       "register() did not set \$registered flag"
     );
 
-    $this->assertCount(3, self::$registered, "register() did not invoke 3 registeration functions");
+    $this->assertCount(3, self::$registered, "register() did not invoke registeration functions");
     $registered = array_column(self::$registered, null, 0);
 
     $this->assertArrayHasKey(
@@ -215,10 +249,10 @@ class HandlerTest extends TestCase {
 
     $this->assertFalse(
       $this->getNonpublicProperty($handler, "registered"),
-      "register() did not remove \$registered flag"
+      "unregister() did not remove \$registered flag"
     );
 
-    $this->assertCount(2, self::$registered, "unregister() did not invoke 2 registeration functions");
+    $this->assertCount(2, self::$registered, "unregister() did not invoke unregisteration functions");
     $registered = array_column(self::$registered, null, 0);
 
     $this->assertArrayHasKey(
@@ -440,5 +474,47 @@ class HandlerTest extends TestCase {
     return function () use ($c, $m) {
       trigger_error($m, $c);
     };
+  }
+}
+
+/** Default Test Logger class. */
+class TestLogger implements Logger {
+
+  public $log = [];
+
+  public function emergency($message, array $context = array()) {
+    $this->log("emergency", $message, $context);
+  }
+
+  public function alert($message, array $context = array()) {
+    $this->log("alert", $message, $context);
+  }
+
+  public function critical($message, array $context = array()) {
+    $this->log("critical", $message, $context);
+  }
+
+  public function error($message, array $context = array()) {
+    $this->log("error", $message, $context);
+  }
+
+  public function warning($message, array $context = array()) {
+    $this->log("warning", $message, $context);
+  }
+
+  public function notice($message, array $context = array()) {
+    $this->log("notice", $message, $context);
+  }
+
+  public function info($message, array $context = array()) {
+    $this->log("info", $message, $context);
+  }
+
+  public function debug($message, array $context = array()) {
+    $this->log("debug", $message, $context);
+  }
+
+  public function log($level, $message, array $context = array()) {
+    $this->log[] = [$level, $message, $context];
   }
 }
