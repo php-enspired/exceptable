@@ -2,7 +2,7 @@
 /**
  * @package    at.exceptable
  * @author     Adrian <adrian@enspi.red>
- * @copyright  2014 - 2018
+ * @copyright  2014 - 2020
  * @license    GPL-3.0 (only)
  *
  *  This program is free software: you can redistribute it and/or modify it
@@ -18,79 +18,107 @@
  */
 declare(strict_types = 1);
 
-namespace at\exceptable;
+namespace AT\Exceptable;
 
-use Throwable;
+use ResourceBundle,
+  Throwable;
 
-use at\exceptable\ExceptableException;
+use AT\Exceptable\ExceptableException;
 
 /**
- * augmented interface for exceptions.
+ * Augmented interface for exceptional exceptions.
+ * Exceptables uniquely identify specific error cases by exception FQCN + code.
  *
- * caution:
- *  - the implementing class must extend from a Throwable class (e.g., Exception).
- *  - if the implementing class extends ErrorException
- *    (which already has a (final) method getSeverity()),
- *    exceptable::getSeverity() will need to be aliased when the trait is used.
+ * Caution:
+ *  - the implementing class must extend from Exception (or a subclass) and implement Exceptable.
  *  - implementations cannot extend from PDOException,
  *    because it breaks the Throwable interface (its getCode() returns a string).
  */
 interface Exceptable extends Throwable {
 
   /**
-   * exception severity levels.
+   * Factory: creates a new Exceptable from the given error code,
+   * adjusting exception info to reflect the location of the calling code.
    *
-   * @type int ERROR    error
-   * @type int WARNING  warning
-   * @type int NOTICE   notice
+   * @see Exceptable::__construct()
+   * @return Exceptable
    */
-  public const ERROR = E_ERROR;
-  public const WARNING = E_WARNING;
-  public const NOTICE = E_NOTICE;
+  public static function create(int $code, ?array $context = [], Throwable $previous = null) : Exceptable;
 
   /**
-   * gets information about a code known to the implementing class.
+   * Gets information about a code known to the implementing class.
    *
-   * @param int $code             the exception code to look up
-   * @throws ExceptableException  if the code is not known to the implementation
-   * @return array                a map of info about the error condition
+   * @param int $code            The exception code to look up
+   * @throws ExceptableException If the code is not known to the implementation
+   * @return array               Information about the error case, including:
+   *  - string $class   Exception class
+   *  - int    $code    Error code
+   *  - string $message Error description
+   *  - string $format  ICU formatting template for contextualized error message
+   *  - mixed  $...     Additional, implementation-specific information
    */
   public static function getInfo(int $code) : array;
 
   /**
-   * checks whether the implementation has info about the given code.
+   * Checks whether the implementation has info about the given code.
    *
-   * @param int $code  the code to check
-   * @return bool      true if the code is known; false otherwise
+   * @param int $code The code to check
+   * @return bool     True if the code is known; false otherwise
    */
   public static function hasInfo(int $code) : bool;
 
   /**
-   * @param int            $code       exception code
-   * @param array          $context    additional exception context
-   * @param Throwable|null $previous   previous exception
-   * @throws ExceptableException       if code is invalid
+   * Checks whether the given exception matches a code known to the implementing class.
+   *
+   * @param Throwable $e    Subject exception
+   * @param int       $code Target code
+   * @return bool True if exception class and code matches; false otherwise
    */
-  public function __construct(int $code, array $context = [], Throwable $previous = null);
+  public static function is(Throwable $e, int $code) : bool;
 
   /**
-   * gets contextual info about this exception.
+   * Sets up localized message support for the concrete implementation(s).
    *
-   * @return array  map of contextual info about this exception
+   * @param string         $locale   Preferred locale
+   * @param ResourceBundle $messages Message format patterns
+   */
+  public static function localize(string $locale, ResourceBundle $messages) : void;
+
+  /**
+   * Factory: creates and throws a new Exceptable from the given error code,
+   * adjusting exception info to reflect the location of the calling code.
+   *
+   * @phan-suppress PhanTypeInvalidThrowsIsInterface
+   *  Intentional.
+   *
+   * @see Exceptable::__construct()
+   * @throws Exceptable
+   */
+  public static function throw(int $code, ?array $context = [], Throwable $previous = null) : void;
+
+  /**
+   * @param int            $code     Exception code
+   * @param ?array         $context  Additional exception context
+   * @param Throwable|null $previous Previous exception
+   * @throws ExceptableException     If code is invalid
+   */
+  public function __construct(int $code = 0, ?array $context = [], Throwable $previous = null);
+
+  /**
+   * Gets contextual information about this exception.
+   *
+   * @return array Exception context, including:
+   *  - string $__message__     The top-level exception message
+   *  - string $__rootMessage__ The root exception message (may be the same as $__message__)
+   *  - mixed  $__...__         Additional, implementation-specific information
+   *  - mixed  $...             Additional context provided at time of error
    */
   public function getContext() : array;
 
   /**
-   * traverses the chain of previous exception(s) and gets the root exception.
+   * Traverses the chain of previous exception(s) and gets the root exception.
    *
-   * @return Throwable  the root exception
+   * @return Throwable The root exception
    */
   public function getRoot() : Throwable;
-
-  /**
-   * gets exception severity.
-   *
-   * @return int  the exception severity
-   */
-  public function getSeverity() : int;
 }

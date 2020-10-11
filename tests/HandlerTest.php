@@ -1,8 +1,9 @@
 <?php
 /**
- * @package    at.util.tests
+ * @package    at.exceptable
+ * @subpackage tests
  * @author     Adrian <adrian@enspi.red>
- * @copyright  2014 - 2016
+ * @copyright  2014 - 2020
  * @license    GPL-3.0 (only)
  *
  *  This program is free software: you can redistribute it and/or modify it
@@ -18,133 +19,502 @@
  */
 declare(strict_types = 1);
 
-namespace at\exceptable\tests;
+namespace AT\Exceptable\Tests;
 
 use ErrorException,
+  Exception,
+  ResourceBundle,
   Throwable;
 
-use at\exceptable\ {
+use AT\Exceptable\ {
+  Exceptable,
   ExceptableException,
-  Handler
+  Handler,
+  IsExceptable,
+  Tests\TestCase
 };
 
-use PHPUnit_Framework_Error as PHPError,
-  PHPUnit\Framework\TestCase;
+use Psr\Log\ {
+  LoggerInterface as Logger,
+  LogLevel
+};
 
 /**
- * tests Handler.
+ * Basic tests for the Exceptable error/exception/shutdown Handler.
+ *
+ * We can test that error/exception/shutdown handlers as registered,
+ * but cannot test them actually working as phpunit intercepts uncaught errors/exceptions
+ * before a (properly functioning) Handler can and interprets them as test failures.
+ *
+ * Due to this limitation, actual invocation of error/exception/shutdown handlers,
+ * as well as the handle() method, must be manually tested outside of phpunit.
+ *
+ * @covers AT\Exceptable\Handler
  */
 class HandlerTest extends TestCase {
 
+  /** @var array[] List of reported error handling function invocations. */
+  protected static $registered = [];
+
   /**
-   * @covers Handler::during()
-   * @covers Handler::register()
-   * @covers Handler::unregister()
+   * Notify test class of invocation of a builtin error handling function.
+   *
+   * @param string $function The function that was invoked
+   * @param mixed  ...$args  Arguments received
    */
-  public function testDuring() {
-    // @todo: also test that an exception handler is properly registered.
-    $this->markTestIncomplete();
-
-    $f1 = function(...$e) use (&$list1) { $list1[] = $e; return true; };
-    $f2 = function(...$e) use (&$list2) { $list2[] = $e; return true; };
-
-    // $f2 should be invoked
-    $h1 = (new Handler)->onError($f1)->register();
-    (new Handler)->onError($f2)->during('trigger_error', 'foo 2', E_USER_ERROR);
-    $this->assertEmpty($list1);
-    $this->assertCount(1, $list2);
-
-    // $f1 should be invoked
-    trigger_error('foo 1', E_USER_ERROR);
-    $this->assertCount(1, $list1);
-
-    // neither should be invoked
-    $h1->unregister();
-    $this->expectException(PHPError::class);
-    trigger_error('foo 0', E_USER_ERROR);
+  public static function notify(string $function, ...$args) : void {
+    self::$registered[] = [$function, $args];
   }
 
-  /**
-   * @covers Handler::_error()
-   */
-  public function testError() {
-    $this->markTestIncomplete();
+  /** {@inheritDoc} */
+  public static function setUpBeforeClass() : void {
+    // Ensure stubs are loaded.
+    require_once __DIR__ . "/stubs.php";
   }
 
-  /**
-   * @covers Handler::_exception()
-   */
-  public function testException() {
-    $this->markTestIncomplete();
+  /** @param array[] List of errors/exceptions reported handled during tests. */
+  protected $stack = [];
+
+  /** {@inheritDoc} */
+  protected function setUp() : void {
+    // Reset error/exception stack between tests.
+    $this->stack = [];
+    self::$registered = [];
   }
 
-  /**
-   * @covers Handler::_shutdown()
-   */
-  public function testShutdown() {
-    $this->markTestIncomplete();
+  public function testDebugModeDisabledByDefault() : void {
+    $handler = new Handler();
+    $handler->onException($this->exceptionHandler(true));
+
+    $handler->try($this->throwCallback(new Exception("should not be logged")));
+    $off = $handler->getDebugLog();
+    $this->assertIsArray($off, "getDebugLog() did not return an array");
+    $this->assertEmpty($off, "debug mode logged items by default");
   }
 
-  /**
-   * @covers Handler::throw()
-   */
-  public function testThrow() {
-    $this->markTestIncomplete();
+  public function testDebugModeLogsWhenEnabled() : void {
+    $handler = new Handler();
+    $handler->onException($this->exceptionHandler(true));
+
+    $handler->debug();
+    $e = new Exception("should be logged");
+    $handler->try($this->throwCallback($e));
+    $this->assertExceptionLogged($handler, 0, $e, true);
   }
 
-  /**
-   * @covers Handler::try
-   */
-  public function testTry() {
-    $this->assertEquals(
-      [1, 2],
-      (new Handler)->try(function (...$args) { return $args; }, 1, 2),
-      'invokes callback with given arguments and returns return value'
+  public function testDebugModeStopsLoggingWhenDisabled() : void {
+    $handler = new Handler();
+    $handler->onException($this->exceptionHandler(true));
+
+    $handler->debug(true);
+    $handler->debug(false);
+    $handler->try($this->throwCallback(new Exception("should not be logged")));
+    $this->assertEmpty($handler->getDebugLog(), "debug mode logged items after disabled");
+  }
+
+  public function testHandleException() : void {
+    $e = new Exception("should be handled in the end");
+    (new Handler())
+      ->onException($this->exceptionHandler(false))
+      ->onException($this->exceptionHandler(true), [Mismatched::class])
+      ->onException($this->exceptionHandler(true))
+      ->handleException($e);
+
+    $this->assertExceptionHandled(0, $e, false);
+    $this->assertExceptionHandled(1, $e, true);
+  }
+
+  public function testHandleExceptionFailure() : void {
+    $e = new Exception("this one slips through");
+    $this->expectThrowable(
+      new ExceptableException(ExceptableException::UNCAUGHT_EXCEPTION, [], $e),
+      self::EXPECT_THROWABLE_CODE | self::EXPECT_THROWABLE_MESSAGE
     );
 
-    $throws = function () { throw new Exception; };
+    $h = (new Handler())
+      ->onException($this->exceptionHandler(false))
+      ->onException($this->exceptionHandler(true), [Mismatched::class])
+      ->handleException($e);
+  }
 
-    $this->assertNull(
-      (new Handler)->onException(function ($e) { return true; })->try($throws),
-      'catches and handles exceptions thrown from callback'
+  public function testLogsError() : void {
+    $handler = new Handler();
+
+    $logger = new TestLogger();
+    $handler->setLogger($logger);
+
+    $code = E_WARNING;
+    $message = "Warning: example";
+    $handler->handleError($code, $message, __FILE__, __LINE__);
+
+    $this->assertCount(1, $logger->log);
+    $log = $logger->log[0];
+    $this->assertSame(LogLevel::WARNING, $log[0]);
+    $this->assertSame($message, $log[1]);
+  }
+
+  public function testLogsDebugError() : void {
+    $handler = new Handler();
+
+    $logger = new TestLogger();
+    $handler->setLogger($logger);
+    $handler->debug();
+
+    $code = E_WARNING;
+    $message = "Warning: example";
+    $handler->handleError($code, $message, __FILE__, __LINE__);
+
+    $this->assertCount(2, $logger->log);
+
+    $debug = $logger->log[0];
+    $this->assertSame(LogLevel::DEBUG, $debug[0]);
+    $this->assertSame($message, $debug[1]);
+
+    $warning = $logger->log[1];
+    $this->assertSame(LogLevel::WARNING, $warning[0]);
+    $this->assertSame($message, $warning[1]);
+  }
+
+  public function testLogsException() : void {
+    $this->markTestIncomplete();
+  }
+
+  public function testRegister() : void {
+    $handler = (new Handler())->register();
+
+    $this->assertTrue(
+      $this->getNonpublicProperty($handler, "registered"),
+      "register() did not set \$registered flag"
     );
 
-    // throws when no registered handler resolves callback's exception
-    $this->expectException(ExceptableException::class);
-    $this->expectExceptionCode(ExceptableException::UNCAUGHT_EXCEPTION);
-    (new Handler)->try($throws);
+    $this->assertCount(3, self::$registered, "register() did not invoke registeration functions");
+    $registered = array_column(self::$registered, null, 0);
+
+    $this->assertArrayHasKey(
+      "set_error_handler",
+      $registered,
+      "set_error_handler() was not invoked"
+    );
+    $this->assertSame(
+      [$handler, "handleError"],
+      $registered["set_error_handler"][1][0],
+      "register() did not register Handler->handleError()"
+    );
+    $this->assertSame(
+      -1,
+      $registered["set_error_handler"][1][1],
+      "register() did not register Handler->handleError() for all error types"
+    );
+
+    $this->assertArrayHasKey(
+      "set_exception_handler",
+      $registered,
+      "set_exception_handler() was not invoked"
+    );
+    $this->assertSame(
+      [$handler, "handleException"],
+      $registered["set_exception_handler"][1][0],
+      "register() did not register Handler->handleException()"
+    );
+
+    $this->assertArrayHasKey(
+      "register_shutdown_function",
+      $registered,
+      "register_shutdown_function() was not invoked"
+    );
+    $this->assertSame(
+      [$handler, "handleShutdown"],
+      $registered["register_shutdown_function"][1][0],
+      "register() did not register Handler->handleShutdown()"
+    );
+    $this->assertEmpty(
+      $registered["register_shutdown_function"][1][1],
+      "register() registered Handler->handleShutdown() with additional arguments"
+    );
+  }
+
+  public function testTryCallback() : void {
+    $e = new Exception("should be handled");
+    (new Handler())->onException($this->exceptionHandler(true))
+      ->try($this->throwCallback($e));
+
+    $this->assertExceptionHandled(0, $e, true);
+  }
+
+  public function testUnregister() : void {
+    $handler = (new Handler())->register();
+    // clear registry
+    self::$registered = [];
+    $handler->unregister();
+
+    $this->assertFalse(
+      $this->getNonpublicProperty($handler, "registered"),
+      "unregister() did not remove \$registered flag"
+    );
+
+    $this->assertCount(2, self::$registered, "unregister() did not invoke unregisteration functions");
+    $registered = array_column(self::$registered, null, 0);
+
+    $this->assertArrayHasKey(
+      "restore_error_handler",
+      $registered,
+      "restore_error_handler() was not invoked"
+    );
+
+    $this->assertArrayHasKey(
+      "restore_exception_handler",
+      $registered,
+      "restore_exception_handler() was not invoked"
+    );
   }
 
   /**
-   * @covers Handler::onError()
-   * @covers Handler::onException()
-   * @covers Handler::onShutdown()
+   * @param int       $index
+   * @param Throwable $e
+   * @param bool      $success
    */
-  public function testOn() {
-    $f1 = function() {};
-    $f2 = function() {};
-    foreach (['error', 'exception', 'shutdown'] as $type) {
-      $handler = (new Handler)->{"on{$type}"}($f1)->{"on{$type}"}($f2);
-      $registered = $this->_getHandlerList($type, $handler);
-      $this->assertContains($f1, $registered);
-      $this->assertContains($f2, $registered);
+  protected function assertErrorHandled(int $i, array $error, bool $success) : void {
+    if (! isset($this->stack[$i]) || ! is_array($this->stack[$i][0])) {
+      $this->fail("no error [{$i}] was handled");
+    }
+
+    [$severity, $message, $file, $line] = $error + [null, null, null, null];
+
+    if (isset($severity)) {
+      $this->assertSame(
+        $severity,
+        $this->stack[$i][0][0],
+        "error [{$i}] did not have expected severity {$severity}"
+      );
+    }
+
+    if (isset($message)) {
+      $this->assertSame(
+        $message,
+        $this->stack[$i][0][1],
+        "error [{$i}] did not have expected message {$message}"
+      );
+    }
+
+    if (isset($file)) {
+      $this->assertSame(
+        $file,
+        $this->stack[$i][0][2],
+        "error [{$i}] did not have expected file {$file}"
+      );
+    }
+
+    if (isset($line)) {
+      $this->assertSame(
+        $line,
+        $this->stack[$i][0][3],
+        "error [{$i}] did not have expected line {$line}"
+      );
+    }
+
+    $h ?
+      $this->assertTrue($this->stack[$i][1], "error [{$i}] was not handled successfully") :
+      $this->assertFalse($this->stack[$i][1], "error [{$i}] was handled successfully");
+  }
+
+  /**
+   *
+   */
+  protected function assertErrorLogged(
+    Handler $handler,
+    int $i,
+    array $error,
+    bool $success
+  ) : void {
+    $log = $handler->getDebugLog();
+    $this->assertIsArray($log);
+    $this->assertArrayHasKey($i);
+    $logItem = $log[$i];
+
+    $this->assertArrayHasKey("time", $logItem, "[time] is missing");
+    $this->assertIsFloat($logItem["time"], "[time] did not log as microtime");
+
+    $this->assertArrayHasKey("type", $logItem, "[type] is missing");
+    $this->assertSame("exception", $logItem["type"], "[type] was not logged as 'exception'");
+
+    $this->assertArrayHasKey("handled", $logItem, "[handled] is missing");
+    $success ?
+      $this->assertTrue($logItem["handled"], "[handled] was not logged as true") :
+      $this->assertFalse($logItem["handled"], "[handled] was not logged as false");
+
+    [$code, $message, $controlled, $file, $line] = $error + [null, null, null, null, null];
+
+    $this->assertArrayHasKey("code", $logItem, "[code] is missing");
+    if (isset($code)) {
+      $this->assertSame($code, $logItem["code"], "[code] was not logged as {$code}]");
+    }
+
+    $this->assertArrayHasKey("message", $logItem, "[message] is missing");
+    if (isset($message)) {
+      $this->assertSame($message, $logItem["message"], "[message] was not logged as '{$message}'");
+    }
+
+    $this->assertArrayHasKey("controlled", $logItem, "[controlled] is missing");
+    if (isset($controlled)) {
+      $this->assertSame(
+        $controlled,
+        $logItem["controlled"],
+        "[controlled] was not logged as {$this->asString($controlled)}"
+      );
+    }
+
+    $this->assertArrayHasKey("file", $logItem, "[file] is missing");
+    if (isset($file)) {
+      $this->assertSame($file, $logItem["file"], "[file] was not logged as '{$file}'");
+    }
+
+    $this->assertArrayHasKey("line", $logItem, "[line] is missing");
+    if (isset($line)) {
+      $this->assertSame($line, $logItem["line"], "[line] was not logged as {$line}");
     }
   }
 
   /**
-   * gets the callable handler from each _Handler registered for a given type.
-   *
-   * @param string  $type     one of error|exception|shutdown
-   * @param Handler $handler  subject Handler
-   * @return callable[]       the target callables
+   * @param int       $index
+   * @param Throwable $e
+   * @param bool      $success
    */
-  protected function _getHandlerList(string $type, Handler $handler) : array {
-    return (function() use ($type) {
-      $handlers = [];
-      foreach ($this->{"_{$type}Handlers"} as $_handler) {
-        $handlers[] = (function() { return $this->_handler; })->call($_handler);
-      }
-      return $handlers;
-    })->call($handler);
+  protected function assertExceptionHandled(int $i, Throwable $e, bool $success) : void {
+    if (! isset($this->stack[$i]) || ! $this->stack[$i][0] instanceof Throwable) {
+      $this->fail("no exception [{$i}] was handled");
+    }
+
+    $this->assertSame($e, $this->stack[$i][0]);
+    $success ?
+      $this->assertTrue($this->stack[$i][1], "exception [{$i}] was not handled successfully") :
+      $this->assertFalse($this->stack[$i][1], "exception [{$i}] was handled successfully");
+  }
+
+  /**
+   * @param Handler   $handler
+   * @param int       $index
+   * @param Throwable $e
+   * @param bool      $handled
+   */
+  protected function assertExceptionLogged(
+    Handler $handler,
+    int $i,
+    Throwable $e,
+    bool $success
+  ) : void {
+    $log = $handler->getDebugLog();
+    $this->assertArrayHasKey($i, $log, "no item [{$i}] was logged");
+    $logItem = $log[$i];
+
+    $this->assertArrayHasKey("time", $logItem, "[time] is missing");
+    $this->assertIsFloat($logItem["time"], "[time] did not log as microtime");
+
+    $this->assertArrayHasKey("type", $logItem, "[type] is missing");
+    $this->assertSame("exception", $logItem["type"], "[type] was not logged as 'exception'");
+
+    $this->assertArrayHasKey("handled", $logItem, "[handled] is missing");
+    $success ?
+      $this->assertTrue($logItem["handled"], "[handled] was not logged as true") :
+      $this->assertFalse($logItem["handled"], "[handled] was not logged as false");
+
+    $this->assertArrayHasKey("exception", $logItem, "[exception] is missing");
+    $this->assertSame(
+      $e,
+      $logItem["exception"],
+      "[exception] did not log expected exception '{$this->asString($e)}'"
+    );
+  }
+
+  /**
+   * Makes an error handler and logs usage.
+   *
+   * @param bool $success Should handler succeed?
+   * @return callable
+   */
+  protected function errorHandler(bool $success) : callable {
+    return function ($c, $m, $f, $l) use ($success) {
+      $this->stack[] = [$c, $m, $f, $l];
+      return $success;
+    };
+  }
+
+  /**
+   * Makes an exception handler and logs usage.
+   *
+   * @param bool $success Should handler succeed?
+   * @return callable
+   */
+  protected function exceptionHandler(bool $success) : callable {
+    return function (Throwable $e) use ($success) {
+      $this->stack[] = [$e, $success];
+      return $success;
+    };
+  }
+
+  /**
+   * Makes a callback that throws an exception.
+   *
+   * @param Throwable $e The exception to throw
+   * @return callable
+   */
+  protected function throwCallback(Throwable $e) : callable {
+    return function () use ($e) {
+      throw $e;
+    };
+  }
+
+  /**
+   * Makes a callback that triggers an error.
+   *
+   * @param int    $c Error code
+   * #param string $m Error message
+   * @return callable
+   */
+  protected function triggerCallback(int $c, string $m = "") : callable {
+    return function () use ($c, $m) {
+      trigger_error($m, $c);
+    };
+  }
+}
+
+/** Default Test Logger class. */
+class TestLogger implements Logger {
+
+  public $log = [];
+
+  public function emergency($message, array $context = array()) {
+    $this->log("emergency", $message, $context);
+  }
+
+  public function alert($message, array $context = array()) {
+    $this->log("alert", $message, $context);
+  }
+
+  public function critical($message, array $context = array()) {
+    $this->log("critical", $message, $context);
+  }
+
+  public function error($message, array $context = array()) {
+    $this->log("error", $message, $context);
+  }
+
+  public function warning($message, array $context = array()) {
+    $this->log("warning", $message, $context);
+  }
+
+  public function notice($message, array $context = array()) {
+    $this->log("notice", $message, $context);
+  }
+
+  public function info($message, array $context = array()) {
+    $this->log("info", $message, $context);
+  }
+
+  public function debug($message, array $context = array()) {
+    $this->log("debug", $message, $context);
+  }
+
+  public function log($level, $message, array $context = array()) {
+    $this->log[] = [$level, $message, $context];
   }
 }

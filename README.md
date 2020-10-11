@@ -1,4 +1,4 @@
-![](https://img.shields.io/github/release/php-enspired/exceptable.svg)  ![](https://img.shields.io/badge/PHP-7.1-blue.svg?colorB=8892BF)  ![](https://img.shields.io/badge/license-GPL_3.0_only-blue.svg)
+![](https://img.shields.io/github/release/php-enspired/exceptable.svg)  ![](https://img.shields.io/badge/PHP-7.3-blue.svg?colorB=8892BF)  ![](https://img.shields.io/badge/license-GPL_3.0_only-blue.svg)
 
 how exceptable!
 ===============
@@ -10,7 +10,9 @@ Exceptables are easy to create and pass details to, they provide access to error
 dependencies
 ------------
 
-Requires php 7.1 or later.
+Requires php 7.3 or later.
+
+ICU support requires the `intl` extension.
 
 **Version 3.0 will require php 7.3** or greater; and ICU support will require the `intl` extension.
 
@@ -24,8 +26,8 @@ a quick taste
 ```php
 <?php
 
-use at\exceptable\Handler;
-use at\exceptable\Exception as Exceptable;
+use AT\Exceptable\Handler;
+use AT\Exceptable\Exception as Exceptable;
 
 // a simple Exceptable just for you
 class FooException extends Exceptable {
@@ -57,6 +59,7 @@ throw new FooException(FooException::UNKNOWN_FOO, $context);
 
 see more in [the wiki](https://github.com/php-enspired/exceptable/wiki).
 
+<<<<<<< HEAD
 Version 2 will reach End-of-Life on November 30, 2020.
 ------------------------------------------------------
 
@@ -70,19 +73,38 @@ Version 3 will require PHP 7.3 or greater and introduces some exciting changes f
 - The generic `Exceptable` Exception base class has been removed.
 - Introduces a "debug mode" for Handlers!
 - Handlers are now Logger (e.g., Monolog)-aware!
+=======
+Version 3.0 will reach End-of-Life on November 30, 2020.
+--------------------------------------------------------
+>>>>>>> 3.0-rc
 
 docs
 ----
 
+<<<<<<< HEAD
+=======
+**Version 3.0** requires PHP 7.3 or greater and introduces some exciting changes from version 2:
+- Support* for ICU locales, message formats, and resource bundles!\
+  \* _requires the intl extension._
+- Ready-to-extend (or just use) `Exceptable` classes based on the built-in SPL Exception classes!
+- The generic `Exceptable` Exception base class has been removed.
+- Introduces a "debug mode" for Handlers!
+- Handlers are now Logger (e.g., Monolog)-aware!
+
+>>>>>>> 3.0-rc
 [Read more about the 3.0 release](https://github.com/php-enspired/exceptable/wiki/new-in-3.0).
 
 - API:
   - [The Exceptable Interface](https://github.com/php-enspired/exceptable/wiki/API:-The-Exceptable-Interface)
+<<<<<<< HEAD
   - [SPL Exception Classes](https://github.com/php-enspired/exceptable/wiki/API:-SPL-Exception-Classes)
+=======
+>>>>>>> 3.0-rc
   - [The Handler Class](https://github.com/php-enspired/exceptable/wiki/API:-The-Handler-Class)
-  - [The ExceptableException Class](https://github.com/php-enspired/exceptable/wiki/API:-The-ExceptableException-Class)
 - [Basic Exceptable Usage](https://github.com/php-enspired/exceptable/wiki/Usage:-Exceptables)
 - [Basic Handler Usage](https://github.com/php-enspired/exceptable/wiki/Usage:-Handlers)
+- [Localization and Message Formatting](https://github.com/php-enspired/exceptable/wiki/Usage:-ICU)
+- [SPL Exception Classes](https://github.com/php-enspired/exceptable/wiki/Usage:-SPL-Exception-Classes)
 
 contributing or getting help
 ----------------------------

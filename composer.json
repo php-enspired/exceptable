@@ -15,19 +15,28 @@
     "irc": "irc://irc.freenode.net/php-enspired"
   },
   "require": {
-    "php": "^7.1"
+    "php": "^7.3"
+  },
+  "suggest": {
+    "ext-intl": "Adds support for localization and ICU message formatting."
   },
   "require-dev": {
-    "phan/phan": "^1",
-    "phpunit/phpunit": "^7"
+    "phan/phan": "^3",
+    "phpunit/phpunit": "^9"
   },
   "autoload": {
     "psr-4": {
-      "at\\exceptable\\": "src/"
+      "AT\\Exceptable\\": "src/",
+      "AT\\Exceptable\\Tests\\": "tests/"
     }
   },
   "scripts": {
+    "build:dist": "bin/build-dist",
+    "build:locales": "genrb resources/language/*.txt -d resources/language/",
+    "build:test": "bin/build-test",
     "test:phan": "vendor/bin/phan",
-    "test:unit" : "vendor/bin/phpunit tests"
+    "test:unit" : "vendor/bin/phpunit tests",
+    "wiki:update": "git subtree push --prefix docs wiki master",
+    "wiki:update-docs": "git subtree pull --prefix docs wiki master --squash --message='Merge wiki updates into docs'"
   }
 }

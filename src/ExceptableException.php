@@ -2,7 +2,7 @@
 /**
  * @package    at.exceptable
  * @author     Adrian <adrian@enspi.red>
- * @copyright  2014 - 2016
+ * @copyright  2014 - 2020
  * @license    GPL-3.0 (only)
  *
  *  This program is free software: you can redistribute it and/or modify it
@@ -18,22 +18,25 @@
  */
 declare(strict_types = 1);
 
-namespace at\exceptable;
+namespace AT\Exceptable;
 
-use at\exceptable\ {
+use Exception;
+
+use AT\Exceptable\ {
   Exceptable,
-  Exception
+  IsExceptable
 };
 
 /**
  * exceptableexceptionsexceptableexceptionsexceptableexceptions
  */
-class ExceptableException extends Exception {
+class ExceptableException extends Exception implements Exceptable {
+  use IsExceptable;
 
   /**
-   * @type int NO_SUCH_CODE        invalid exception code
-   * @type int UNCAUGHT_EXCEPTION  uncaught/unhandled exception during runtime
-   * @type int INVALID_HANDLER     invalid handler (e.g., wrong signature, or throws)
+   * @var int NO_SUCH_CODE       Invalid exception code
+   * @var int UNCAUGHT_EXCEPTION Uncaught/unhandled exception during runtime
+   * @var int INVALID_HANDLER    Invalid handler (e.g., wrong signature, or throws)
    */
   public const NO_SUCH_CODE = 1;
   public const UNCAUGHT_EXCEPTION = 2;
@@ -42,19 +45,19 @@ class ExceptableException extends Exception {
   /** @see Exceptable::INFO */
   public const INFO = [
     self::NO_SUCH_CODE => [
-      'message' => 'no such code',
-      'severity' => Exceptable::WARNING,
-      'tr_message' => "no exception code '{code}' is known"
+      "message" => "No such code",
+      "formatKey" => "exceptable.exceptableexception.no_such_code",
+      "format" => "No exception code '{code}' is known"
     ],
     self::UNCAUGHT_EXCEPTION => [
-      'message' => 'uncaught exception',
-      'severity' => Exceptable::ERROR,
-      'tr_message' => 'no registered handler caught exception: {__rootMessage__}'
+      "message" => "Uncaught exception",
+      "formatKey" => "exceptable.exceptableexception.uncaught_exception",
+      "format" => "No registered handler caught exception: {__rootMessage__}"
     ],
     self::INVALID_HANDLER => [
-      'message' => 'invalid handler',
-      'severity' => Exceptable::ERROR,
-      'tr_message' => 'invalid handler [{type}]: {__rootMessage__}'
+      "message" => "Invalid handler",
+      "formatKey" => "exceptable.exceptableexception.invalid_handler",
+      "format" => "Invalid handler [{type}]: {__rootMessage__}"
     ]
   ];
 }
