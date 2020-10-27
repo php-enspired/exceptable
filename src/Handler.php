@@ -47,14 +47,10 @@ class Handler implements LoggerAware {
   protected $errors = [];
 
   /**
-   * @var callable[][] $exceptionHandlers List of registered exception handlers,
-   *  indexed by Throwable FQCN to catch.
-   * @var callable[] $rootExceptionHandlers List of registered \Exception handlers.
-   * @var callable[] $rootThrowableHandlers List of registered \Throwable handlers.
+   * @var callable[][][] $exceptionHandlers List of registered exception handlers,
+   *  indexed by Throwable FQCN and code to catch.
    */
   protected $exceptionHandlers = [];
-  protected $rootExceptionHandlers = [];
-  protected $rootThrowableHandlers = [];
 
   /** @var Logger Logging mechanism. */
   protected $logger;
@@ -121,10 +117,12 @@ class Handler implements LoggerAware {
    * @param string $m       Error message
    * @param string $f       Error file
    * @param int    $l       Error line
-   * @throws ErrorException If error severity matches $_throw setting
+   * @throws ErrorException If error severity matches $throw setting
    * @return bool           True if error handled; false if php's error handler should continue
    */
   public function handleError(int $c, string $m, string $f, int $l) : bool {
+    $this->throwIfMatches($c, $m, $f, $l);
+
     $error = [
       "code" => $c,
       "message" => $m,
@@ -135,10 +133,6 @@ class Handler implements LoggerAware {
     if (! $this->scream && error_reporting() === 0) {
       $this->logError(true, $error);
       return true;
-    }
-
-    if (($c & $this->throw) === $c) {
-      throw new ErrorException($m, $c, $c, $f, $l);
     }
 
     foreach ($this->errorHandlers as $severity => $handlers) {
@@ -163,18 +157,31 @@ class Handler implements LoggerAware {
    * @throws ExceptableException If no registered handler handles the exception
    */
   public function handleException(Throwable $e) : void {
-    $allHandlers = $this->exceptionHandlers +
-      [Exception::class => $this->rootExceptionHandlers] +
-      [Throwable::class => $this->rootThrowableHandlers];
+    $type = get_class($e);
+    $code = $e->getCode();
 
-    foreach ($allHandlers as $catches => $handlers) {
-      foreach ($handlers as $handler) {
-        if ($e instanceof $catches && $handler($e) === true) {
-          if ($this->debug) {
-            $this->logException(true, $e);
-          }
+    // exact type and code
+    foreach ($this->exceptionHandlers[$type][$code] ?? [] as $handler) {
+      if ($this->runExceptionHandler($handler, $e)) {
+        return;
+      }
+    }
+
+    // work up inheritance chain with catch-all code
+    do {
+      foreach ($this->exceptionHandlers[$type][0] ?? [] as $handler) {
+        if ($this->runExceptionHandler($handler, $e)) {
           return;
         }
+      }
+
+      $type = get_parent_class($type);
+    } while (! empty($type));
+
+    // try any lowest-level catch-all handlers
+    foreach ($this->exceptionHandlers[Throwable::class][0] ?? [] as $handler) {
+      if ($this->runExceptionHandler($handler, $e)) {
+        return;
       }
     }
 
@@ -220,22 +227,13 @@ class Handler implements LoggerAware {
    * Adds an exception handler.
    * @see <http://php.net/set_exception_handler> $exception_handler
    *
-   * @param callable $handler The exception handler to add
-   * @param string[] $catches List of FQCN(s) this handler should handle (defaults to any)
-   * @return Handler          $this
+   * @param callable      $handler The exception handler to add
+   * @param string|null   $catch   Exception FQCN this handler should handle (defaults to any)
+   * @param int           $code    Exception code this handler should handle (defaults to any)
+   * @return Handler               $this
    */
-  public function onException(callable $handler, array $catches = [Throwable::class]) : Handler {
-    foreach ($catches as $catch) {
-      if ($catch === Throwable::class) {
-        $this->rootThrowableHandlers[] = $handler;
-        continue;
-      }
-      if ($catch === Exception::class) {
-        $this->rootExceptionHandlers[] = $handler;
-        continue;
-      }
-      $this->exceptionHandlers[$catch][] = $handler;
-    }
+  public function onException(callable $handler, string $catch = null, int $code = 0) : Handler {
+    $this->exceptionHandlers[$catch ?? Throwable::class][$code][] = $handler;
 
     return $this;
   }
@@ -301,17 +299,27 @@ class Handler implements LoggerAware {
   /**
    * Invokes a callback and handles any exceptions using registered handlers.
    *
+   * Will throw ErrorExceptions during invocation even if the instance is not registered.
+   *
    * @param callable $callback   The callback to execute
    * @param mixed ...$arguments  Arguments to pass to the callback
-   * @throws ExceptableException If no registered handler handles the exception
-   * @return mixed               The value returned from the callback on success; null otherwise
+   * @throws ExceptableException If an exception is thrown and no registered handler handles it
+   * @return mixed               The value returned from the callback on success
    */
   public function try(callable $callback, ...$arguments) {
     try {
+      $throwErrorExceptions = $this->throw > 0 && ! $this->registered;
+      if ($throwErrorExceptions) {
+        set_error_handler([$this, "throwIfMatches"], $this->throw);
+      }
       return $callback(...$arguments);
     } catch (Throwable $e) {
       $this->handleException($e);
       return null;
+    } finally {
+      if ($throwErrorExceptions) {
+        restore_error_handler();
+      }
     }
   }
 
@@ -434,6 +442,49 @@ class Handler implements LoggerAware {
       if(! $handled) {
         $this->logger->log(LogLevel::CRITICAL, $e->getMessage(), $error);
       }
+    }
+  }
+
+  /**
+   * Invokes an exception handler.
+   *
+   * @param callable  $handler   The handler to invoke
+   * @param Throwable $e         The exception to handle
+   * @return bool                True if handler ran successfully; false otherwise
+   * @throws ExceptableException INVALID_HANDLER if the handler errors
+   */
+  protected function runExceptionHandler(callable $handler, Throwable $e) : bool {
+    try {
+      if ($handler($e) === true) {
+        if ($this->debug) {
+          $this->logException(true, $e);
+        }
+
+        return true;
+      }
+
+      return false;
+    } catch (Throwable $x) {
+      ExceptableException::throw(
+        ExceptableException::INVALID_HANDLER,
+        ["type" => gettype($handler), "unhandled" => $e],
+        $x
+      );
+    }
+  }
+
+  /**
+   * Throws an ErrorException if the given error code matches $throw setting.
+   *
+   * @param int    $c       Error code
+   * @param string $m       Error message
+   * @param string $f       Error file
+   * @param int    $l       Error line
+   * @throws ErrorException If error severity matches $throw setting
+   */
+  protected function throwIfMatches(int $c, string $m, string $f, int $l) : void {
+    if (($c & $this->throw) === $c) {
+      throw new ErrorException($m, $c, $c, $f, $l);
     }
   }
 }

@@ -116,7 +116,7 @@ class HandlerTest extends TestCase {
     $e = new Exception("should be handled in the end");
     (new Handler())
       ->onException($this->exceptionHandler(false))
-      ->onException($this->exceptionHandler(true), [Mismatched::class])
+      ->onException($this->exceptionHandler(true), Mismatched::class)
       ->onException($this->exceptionHandler(true))
       ->handleException($e);
 
@@ -133,7 +133,7 @@ class HandlerTest extends TestCase {
 
     $h = (new Handler())
       ->onException($this->exceptionHandler(false))
-      ->onException($this->exceptionHandler(true), [Mismatched::class])
+      ->onException($this->exceptionHandler(true), Mismatched::class)
       ->handleException($e);
   }
 

@@ -46,18 +46,18 @@ class ExceptableException extends Exception implements Exceptable {
   public const INFO = [
     self::NO_SUCH_CODE => [
       "message" => "No such code",
-      "formatKey" => "exceptable.exceptableexception.no_such_code",
-      "format" => "No exception code '{code}' is known"
+      "format" => "No exception code '{code}' is known",
+      "formatKey" => "exceptable.exceptableexception.no_such_code"
     ],
     self::UNCAUGHT_EXCEPTION => [
       "message" => "Uncaught exception",
-      "formatKey" => "exceptable.exceptableexception.uncaught_exception",
-      "format" => "No registered handler caught exception: {__rootMessage__}"
+      "format" => "No registered handler caught exception: {__rootMessage__}",
+      "formatKey" => "exceptable.exceptableexception.uncaught_exception"
     ],
     self::INVALID_HANDLER => [
       "message" => "Invalid handler",
-      "formatKey" => "exceptable.exceptableexception.invalid_handler",
-      "format" => "Invalid handler [{type}]: {__rootMessage__}"
+      "format" => "Invalid handler [{type}]: {__rootMessage__}",
+      "formatKey" => "exceptable.exceptableexception.invalid_handler"
     ]
   ];
 }
