@@ -25,10 +25,10 @@ a quick taste
 <?php
 
 use AT\Exceptable\Handler;
-use AT\Exceptable\Exception as Exceptable;
+use AT\Exceptable\Spl\RuntimeException;
 
 // a simple Exceptable just for you
-class FooException extends Exceptable {
+class FooException extends RuntimeException {
 
   const UNKNOWN_FOO = 1;
 
