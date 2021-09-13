@@ -190,6 +190,24 @@ trait IsExceptable {
   }
 
   /**
+   * Gets string-able context, as strings, for message formatting.
+   *
+   * @return string[] Formatting context
+   */
+  protected function getFormattingContext() : array {
+    $formatting_context = [];
+    foreach ($this->context as $key => $value) {
+      if (! is_scalar($value) && ! (is_object($value) && method_exists($value, "__toString"))) {
+        continue;
+      }
+      
+      $formatting_context[$key] = (string) $value;
+    }
+    
+    return $formatting_context;
+  }
+
+  /**
    * Builds the exception message based on error code.
    *
    * @param int $code Error code
@@ -204,7 +222,7 @@ trait IsExceptable {
         $message = MessageFormatter::formatMessage(
           static::$locale ?? static::$defaultLocale,
           $format,
-          $this->context
+          $this->getFormattingContext()
         ) ?:
           $info["message"];
 
@@ -228,11 +246,12 @@ trait IsExceptable {
    * @return string|null Formatted message on success; null otherwise
    */
   protected function substituteMessage(string $format) : ?string {
+    $context = $this->getFormattingContext();
     preg_match_all("(\{(\w+)\})u", $format, $matches);
     $placeholders = $matches[1];
     $replacements = [];
     foreach ($placeholders as $placeholder) {
-      if (! isset($this->context[$placeholder]) || ! is_scalar($this->context[$placeholder])) {
+      if (! isset($context[$placeholder])) {
         return null;
       }
 
