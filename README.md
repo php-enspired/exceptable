@@ -57,9 +57,6 @@ throw new FooException(FooException::UNKNOWN_FOO, $context);
 
 see more in [the wiki](https://github.com/php-enspired/exceptable/wiki).
 
-Version 2 will reach End-of-Life on November 30, 2020.
-------------------------------------------------------
-
 Version 3.0 is here!
 --------------------
 
@@ -88,4 +85,4 @@ docs
 contributing or getting help
 ----------------------------
 
-I'm on [Freenode at `#php-enspired`](http://web.libera.chat#php-enspired), or open an issue [on github](https://github.com/php-enspired/exceptable/issues).  Feedback is welcomed as well.
+I'm [on IRC at `libera#php-enspired`](https://web.libera.chat#php-enspired), or open an issue [on github](https://github.com/php-enspired/exceptable/issues).  Feedback is welcomed as well.

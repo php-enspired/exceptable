@@ -12,7 +12,10 @@
     }
   ],
   "support": {
-    "irc": "irc://irc.freenode.net/php-enspired"
+    "email": "exceptable@php.enspi.red",
+    "irc": "irc://irc.libera.chat/php-enspired",
+    "chat": "https://web.libera.chat/#php-enspired",
+    "source": "https://github.com/php-enspired/exceptable"
   },
   "require": {
     "php": "^7.3"
