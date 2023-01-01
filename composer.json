@@ -18,13 +18,13 @@
     "source": "https://github.com/php-enspired/exceptable"
   },
   "require": {
-    "php": "^7.3"
+    "php": "^7.4 || ^8.0"
   },
   "suggest": {
     "ext-intl": "Adds support for localization and ICU message formatting."
   },
   "require-dev": {
-    "phan/phan": "^3",
+    "phan/phan": "^5",
     "phpunit/phpunit": "^9"
   },
   "autoload": {
