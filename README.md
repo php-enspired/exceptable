@@ -10,7 +10,7 @@ Exceptables are easy to create and pass details to, they provide access to error
 dependencies
 ------------
 
-Requires php 7.3 or later.
+Requires php 7.4 or later.
 
 ICU support requires the `intl` extension.
 
@@ -56,6 +56,13 @@ throw new FooException(FooException::UNKNOWN_FOO, $context);
 ```
 
 see more in [the wiki](https://github.com/php-enspired/exceptable/wiki).
+
+Version 4.0 is here!
+--------------------
+
+**Version 4.0** requires PHP 7.4 or greater.
+- PHP 7.4 added typehints to some Throwable properties, which required changes to the `IsExceptable` trait. This means _Exceptable_ can no longer support PHP 7.3 or earlier - though that's fine, right? You've already upgraded your application to 8+ anyway, right?
+- right?
 
 Version 3.0 is here!
 --------------------
