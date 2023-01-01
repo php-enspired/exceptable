@@ -116,8 +116,8 @@ trait IsExceptable {
    * @var string $message
    */
   protected $code = 0;
-  protected $file = null;
-  protected $line = null;
+  protected string $file = "";
+  protected int $line = 0;
   protected $message = "";
 
   /** @var array Contextual information. */
