@@ -24,8 +24,8 @@ a quick taste
 ```php
 <?php
 
-use AT\Exceptable\Handler;
-use AT\Exceptable\Spl\RuntimeException;
+use at\exceptable\Handler;
+use at\exceptable\Spl\RuntimeException;
 
 // a simple Exceptable just for you
 class FooException extends RuntimeException {

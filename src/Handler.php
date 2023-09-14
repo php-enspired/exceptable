@@ -18,13 +18,13 @@
  */
 declare(strict_types = 1);
 
-namespace AT\Exceptable;
+namespace at\exceptable;
 
 use ErrorException,
   Exception,
   Throwable;
 
-use AT\Exceptable\ExceptableException;
+use at\exceptable\ExceptableError;
 
 use Psr\Log\ {
   LoggerAwareInterface as LoggerAware,
@@ -154,7 +154,7 @@ class Handler implements LoggerAware {
    * Handles uncaught exceptions.
    *
    * @param Throwable $e         The uncaught exception
-   * @throws ExceptableException If no registered handler handles the exception
+   * @throws ExceptableError If no registered handler handles the exception
    */
   public function handleException(Throwable $e) : void {
     $type = get_class($e);
@@ -186,7 +186,7 @@ class Handler implements LoggerAware {
     }
 
     $this->logException(false, $e);
-    throw new ExceptableException(ExceptableException::UNCAUGHT_EXCEPTION, [], $e);
+    throw new ExceptableError(ExceptableError::UNCAUGHT_EXCEPTION, [], $e);
   }
 
   /**
@@ -303,7 +303,7 @@ class Handler implements LoggerAware {
    *
    * @param callable $callback   The callback to execute
    * @param mixed ...$arguments  Arguments to pass to the callback
-   * @throws ExceptableException If an exception is thrown and no registered handler handles it
+   * @throws ExceptableError If an exception is thrown and no registered handler handles it
    * @return mixed               The value returned from the callback on success
    */
   public function try(callable $callback, ...$arguments) {
@@ -451,7 +451,7 @@ class Handler implements LoggerAware {
    * @param callable  $handler   The handler to invoke
    * @param Throwable $e         The exception to handle
    * @return bool                True if handler ran successfully; false otherwise
-   * @throws ExceptableException INVALID_HANDLER if the handler errors
+   * @throws ExceptableError INVALID_HANDLER if the handler errors
    */
   protected function runExceptionHandler(callable $handler, Throwable $e) : bool {
     try {
@@ -465,8 +465,8 @@ class Handler implements LoggerAware {
 
       return false;
     } catch (Throwable $x) {
-      ExceptableException::throw(
-        ExceptableException::INVALID_HANDLER,
+      ExceptableError::throw(
+        ExceptableError::INVALID_HANDLER,
         ["type" => gettype($handler), "unhandled" => $e],
         $x
       );

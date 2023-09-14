@@ -18,11 +18,11 @@
  */
 declare(strict_types = 1);
 
-namespace AT\Exceptable\Spl;
+namespace at\exceptable\Spl;
 
 use LengthException as SplLengthException;
 
-use AT\Exceptable\ {
+use at\exceptable\ {
   Exceptable,
   IsExceptable
 };

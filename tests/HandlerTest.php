@@ -19,16 +19,16 @@
  */
 declare(strict_types = 1);
 
-namespace AT\Exceptable\Tests;
+namespace at\exceptable\Tests;
 
 use ErrorException,
   Exception,
   ResourceBundle,
   Throwable;
 
-use AT\Exceptable\ {
+use at\exceptable\ {
   Exceptable,
-  ExceptableException,
+  ExceptableError,
   Handler,
   IsExceptable,
   Tests\TestCase
@@ -49,7 +49,7 @@ use Psr\Log\ {
  * Due to this limitation, actual invocation of error/exception/shutdown handlers,
  * as well as the handle() method, must be manually tested outside of phpunit.
  *
- * @covers AT\Exceptable\Handler
+ * @covers at\exceptable\Handler
  */
 class HandlerTest extends TestCase {
 
@@ -127,7 +127,7 @@ class HandlerTest extends TestCase {
   public function testHandleExceptionFailure() : void {
     $e = new Exception("this one slips through");
     $this->expectThrowable(
-      new ExceptableException(ExceptableException::UNCAUGHT_EXCEPTION, [], $e),
+      new ExceptableError(ExceptableError::UNCAUGHT_EXCEPTION, [], $e),
       self::EXPECT_THROWABLE_CODE | self::EXPECT_THROWABLE_MESSAGE
     );
 

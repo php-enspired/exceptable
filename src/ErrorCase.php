@@ -2,7 +2,7 @@
 /**
  * @package    at.exceptable
  * @author     Adrian <adrian@enspi.red>
- * @copyright  2014 - 2020
+ * @copyright  2014 - 2023
  * @license    GPL-3.0 (only)
  *
  *  This program is free software: you can redistribute it and/or modify it
@@ -17,32 +17,26 @@
  *  If not, see <http://www.gnu.org/licenses/gpl-3.0.txt>.
  */
 declare(strict_types = 1);
+namespace at\exceptable;
 
-namespace at\exceptable\Spl;
+use BackedEnum,
+  Throwable;
 
-use UnderflowException as SplUnderflowException;
-
-use at\exceptable\ {
-  Exceptable,
-  IsExceptable
-};
+use at\peekaboo\HasMessages;
 
 /**
- * Exceptable implementation of Spl's UnderflowException.
- * @see https://php.net/UnderflowException
+ * Defines error cases for an Exceptable.
+ *
+ * Implementing enums MUST be integer-backed (ints are error codes).
  */
-class UnderflowException extends SplUnderflowException implements Exceptable {
-  use IsExceptable;
+interface ErrorCase extends BackedEnum, HasMessages {
 
-  /** @var int Underflow. */
-  public const UNDERFLOW = 0;
-
-  /** @see IsExceptable::getInfo() */
-  public const INFO = [
-    self::UNDERFLOW => [
-      "message" => "Underflow",
-      "formatKey" => "exceptable.spl.underflow",
-      "format" => "Underflow: {__rootMessage__}"
-    ]
-  ];
+  /**
+   * Builds and throws an exception based on this ErrorCase.
+   *
+   * @param array $context Additional exception context
+   * @param ?Throwable $previous Previous exception
+   * @throws Exceptable
+   */
+  public function throw(array $context = [], Throwable $previous = null) : void;
 }

@@ -19,7 +19,7 @@
  */
 declare(strict_types = 1);
 
-namespace AT\Exceptable\Tests;
+namespace at\exceptable\Tests;
 
 use BadMethodCallException,
   ReflectionClass,

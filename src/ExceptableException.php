@@ -18,11 +18,11 @@
  */
 declare(strict_types = 1);
 
-namespace AT\Exceptable;
+namespace at\exceptable;
 
 use Exception;
 
-use AT\Exceptable\ {
+use at\exceptable\ {
   Exceptable,
   IsExceptable
 };
@@ -30,7 +30,7 @@ use AT\Exceptable\ {
 /**
  * exceptableexceptionsexceptableexceptionsexceptableexceptions
  */
-class ExceptableException extends Exception implements Exceptable {
+class ExceptableError extends Exception implements Exceptable {
   use IsExceptable;
 
   /**

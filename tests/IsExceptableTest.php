@@ -19,15 +19,15 @@
  */
 declare(strict_types = 1);
 
-namespace AT\Exceptable\Tests;
+namespace at\exceptable\Tests;
 
 use Exception,
   ResourceBundle,
   Throwable;
 
-use AT\Exceptable\ {
+use at\exceptable\ {
   Exceptable,
-  ExceptableException,
+  ExceptableError,
   IsExceptable,
   Tests\TestCase
 };
@@ -35,7 +35,7 @@ use AT\Exceptable\ {
 /**
  * Basic tests for the default Exceptable implementation (the IsExceptable trait).
  *
- * @covers AT\Exceptable\IsExceptable
+ * @covers at\exceptable\IsExceptable
  *
  * This test case can (should) be extended to test other concrete implementations:
  *  - override exceptableFQCN() method to provide the name of the exceptable to test
@@ -287,7 +287,7 @@ class IsExceptableTest extends TestCase {
     $fqcn = $this->exceptableFQCN();
 
     $this->expectThrowable(
-      new ExceptableException(ExceptableException::NO_SUCH_CODE, ["code" => $code]),
+      new ExceptableError(ExceptableError::NO_SUCH_CODE, ["code" => $code]),
       self::EXPECT_THROWABLE_CODE | self::EXPECT_THROWABLE_MESSAGE
     );
 

@@ -2,7 +2,7 @@
 /**
  * @package    at.exceptable
  * @author     Adrian <adrian@enspi.red>
- * @copyright  2014 - 2020
+ * @copyright  2014 - 2023
  * @license    GPL-3.0 (only)
  *
  *  This program is free software: you can redistribute it and/or modify it
@@ -17,14 +17,16 @@
  *  If not, see <http://www.gnu.org/licenses/gpl-3.0.txt>.
  */
 declare(strict_types = 1);
-
-namespace AT\Exceptable;
+namespace at\exceptable;
 
 use MessageFormatter,
   ResourceBundle,
   Throwable;
 
-use AT\Exceptable\Exceptable;
+use at\exceptable\ {
+  ErrorCase,
+  Exceptable
+};
 
 /**
  * Base implementation for Exceptable interface, including contexted message construction.
@@ -34,120 +36,41 @@ use AT\Exceptable\Exceptable;
  *  const INFO is expected to be defined by implementations; all usage here checks first.
  */
 trait IsExceptable {
+  use HasExceptableInternals;
 
-  /** @var string Preferred locale for messages. */
-  protected static $locale;
+  /** @see Exceptable::fromCase() $case */
+  protected ErrorCase $case;
 
-  /** @var string Default locale for messages (MUST NOT be modified at runtime). */
-  protected static $defaultLocale = "en";
+  /** @see Exceptable::fromCase() $context */
+  protected array $context = [];
 
-  /** @var ResourceBundle ICU messages bundle. */
-  protected static $messages;
+  /** @see Exceptable::fromCase() $previous */
+  protected ? Throwable $previous = null;
 
-  /**
-   * {@inheritDoc}
-   *
-   * @phan-suppress PhanTypeInstantiateTraitStaticOrSelf
-   *  We define the constructor. You shouldn't change it.
-   */
-  public static function create(int $code, ?array $context = [], Throwable $previous = null) : Exceptable {
-    $exceptable = new static($code, $context, $previous);
-
-    $frame = $exceptable->getTrace()[0];
-    $exceptable->file = $frame["file"];
-    $exceptable->line = $frame["line"];
-
-    assert($exceptable instanceof Exceptable);
-    return $exceptable;
-  }
-
-  /** @see Exceptable::getInfo() */
-  public static function getInfo(int $code) : array {
-    if (! static::hasInfo($code)) {
-      throw ExceptableException::create(ExceptableException::NO_SUCH_CODE, ['code' => $code]);
-    }
-
-    return ["code" => $code] + static::INFO[$code] + ["format" => null];
-  }
-
-  /** @see Exceptable::hasInfo() */
-  public static function hasInfo(int $code) : bool {
-    return defined("static::INFO") &&
-      isset(static::INFO[$code]["message"]) &&
-      is_string(static::INFO[$code]["message"]);
+  /** @see Exceptable::fromCase() */
+  public static function fromCase(ErrorCase $case, array $context = [], ? Throwable $previous = null) : Exceptable {
+    assert(is_a(static::class, Exceptable::class, true));
+    return (new static($case->message($this->context), $case->value, $previous))->adjust();
   }
 
   /** @see Exceptable::is() */
-  public static function is(Throwable $e, int $code) : bool {
-    return (get_class($e) === static::class) &&
-      static::hasInfo($code) &&
-      $e->getCode() === $code;
+  public function is(ErrorCase $case) : bool {
+    return $this->case === $case;
   }
 
-  /** @see Exceptable::localize() */
-  public static function localize(string $locale, ResourceBundle $messages) : void {
-    static::$locale = $locale;
-    static::$messages = $messages;
+  /** @see Exceptable::case() */
+  public function case() : ErrorCase {
+    return $this->case;
   }
 
-  /**
-   * {@inheritDoc}
-   *
-   * @phan-suppress PhanTypeInstantiateTraitStaticOrSelf
-   *  We define the constructor. You shouldn't change it.
-   */
-  public static function throw(int $code, ?array $context = [], Throwable $previous = null) : void {
-    $exceptable = new static($code, $context, $previous);
-
-    $frame = $exceptable->getTrace()[0];
-    $exceptable->file = $frame["file"];
-    $exceptable->line = $frame["line"];
-
-    assert($exceptable instanceof Exceptable);
-    throw $exceptable;
-  }
-
-  /**
-   * @see https://php.net/class.Exception
-   *
-   * @var int    $code
-   * @var string $file
-   * @var int    $line
-   * @var string $message
-   */
-  protected $code = 0;
-  protected string $file = "";
-  protected int $line = 0;
-  protected $message = "";
-
-  /** @var array Contextual information. */
-  protected $context = [];
-
-  /** @see Exceptable::__construct() */
-  public function __construct(int $code = 0, ?array $context = [], Throwable $previous = null) {
-    $this->context = $context ?? [];
-    $this->context["__rootMessage__"] = isset($previous) ?
-      $this->findRoot($previous)->getMessage() :
-      null;
-
-    // @phan-suppress-next-line PhanTraitParentReference
-    parent::__construct($this->makeMessage($code), $code, $previous);
-
-    $this->context["__rootMessage__"] = $this->context["__rootMessage__"] ?? $this->getMessage();
-  }
-
-  /** @see Exceptable::getContext() */
-  public function getContext() : array {
+  /** @see Exceptable::context() */
+  public function context() : array {
     return $this->context;
   }
 
-  /**
-   * @see Exceptable::getRoot()
-   *
-   * @phan-suppress PhanTypeMismatchArgument
-   *  Exceptables ARE Throwable.
-   */
-  public function getRoot() : Throwable {
+  /** @see Exceptable::root() */
+  public function root() : Throwable {
+    assert($this instanceof Throwable);
     return $this->findRoot($this);
   }
 
@@ -164,121 +87,19 @@ trait IsExceptable {
 
     return $root;
   }
+}
 
-  /**
-   * Looks up a message format by key, if a messages bundle is available.
-   *
-   * @param string|null $key Dot-delimited path to desired key
-   * @return string|null Message format on success; null otherwise
-   */
-  protected function getMessageFormat(?string $key) : ?string {
-    if (! isset($key, static::$messages)) {
-      return null;
+/** Base implementation for Exceptable internal methods. */
+trait HasExceptableInternals {
+
+  /** @see ExceptableInternals::throw() */
+  public function adjust(int $frame = 0) : Exceptable {
+    $info = $this->getTrace()[$frame] ?? null;
+    if (isset($frame)) {
+      $this->file = $info["file"];
+      $this->line = $info["line"];
     }
 
-    $message = static::$messages;
-    foreach (explode(".", $key) as $next) {
-      if ($message instanceof ResourceBundle) {
-        $message = $message->get($next);
-        continue;
-      }
-
-      return null;
-    }
-
-    return is_scalar($message) ? (string) $message : null;
+    return $this;
   }
-
-  /**
-   * Gets string-able context, as strings, for message formatting.
-   *
-   * @return string[] Formatting context
-   */
-  protected function getFormattingContext() : array {
-    $formatting_context = [];
-    foreach ($this->context as $key => $value) {
-      if (! is_scalar($value) && ! (is_object($value) && method_exists($value, "__toString"))) {
-        continue;
-      }
-      
-      $formatting_context[$key] = (string) $value;
-    }
-    
-    return $formatting_context;
-  }
-
-  /**
-   * Builds the exception message based on error code.
-   *
-   * @param int $code Error code
-   * @return string
-   */
-  protected function makeMessage(int $code) : string {
-    $info = static::getInfo($code);
-
-    $format = $this->getMessageFormat($info["formatKey"] ?? null) ?? $info["format"];
-    if (isset($format)) {
-      if (extension_loaded("intl")) {
-        $message = MessageFormatter::formatMessage(
-          static::$locale ?? static::$defaultLocale,
-          $format,
-          $this->getFormattingContext()
-        ) ?:
-          $info["message"];
-
-        // :(
-        if ($message !== $format) {
-          return $message;
-        }
-      }
-
-      return $this->substituteMessage($format) ?? $info["message"];
-    }
-
-    return $info["message"];
-  }
-
-  /**
-   * Fallback message formatter, used if Intl is not installed.
-   * Supports simple value substitution only.
-   *
-   * @param string $format Message format string
-   * @return string|null Formatted message on success; null otherwise
-   */
-  protected function substituteMessage(string $format) : ?string {
-    $context = $this->getFormattingContext();
-    preg_match_all("(\{(\w+)\})u", $format, $matches);
-    $placeholders = $matches[1];
-    $replacements = [];
-    foreach ($placeholders as $placeholder) {
-      if (! isset($context[$placeholder])) {
-        return null;
-      }
-
-      $replacements["{{$placeholder}}"] = $this->context[$placeholder];
-    }
-
-    return strtr($format, $replacements);
-  }
-
-  /** @see https://php.net/Throwable.getCode */
-  abstract public function getCode();
-
-  /** @see https://php.net/Throwable.getFile */
-  abstract public function getFile();
-
-  /** @see https://php.net/Throwable.getLine */
-  abstract public function getLine();
-
-  /** @see https://php.net/Throwable.getMessage */
-  abstract public function getMessage();
-
-  /** @see https://php.net/Throwable.getPrevious */
-  abstract public function getPrevious();
-
-  /** @see https://php.net/Throwable.getTrace */
-  abstract public function getTrace();
-
-  /** @see https://php.net/Throwable.getTraceasString */
-  abstract public function getTraceAsString();
 }

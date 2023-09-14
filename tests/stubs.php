@@ -19,9 +19,9 @@
  */
 declare(strict_types = 1);
 
-namespace AT\Exceptable;
+namespace at\exceptable;
 
-use AT\Exceptable\Tests\HandlerTest;
+use at\exceptable\Tests\HandlerTest;
 
 if (! function_exists(register_shutdown_function::class)) {
   /**
