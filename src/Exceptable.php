@@ -2,7 +2,7 @@
 /**
  * @package    at.exceptable
  * @author     Adrian <adrian@enspi.red>
- * @copyright  2014 - 2023
+ * @copyright  2014 - 2024
  * @license    GPL-3.0 (only)
  *
  *  This program is free software: you can redistribute it and/or modify it
@@ -23,46 +23,45 @@ namespace at\exceptable;
 use Throwable;
 
 use at\exceptable\ {
-  ErrorCase,
+  Error,
   ExceptableError
 };
 
 /**
  * Augmented interface for exceptional exceptions.
- * Exceptables uniquely identify specific error cases by error case.
+ * Exceptables uniquely identify specific error cases.
  *
  * Caution:
  *  - the implementing class must extend from Exception (or a subclass) and implement Exceptable.
  *  - implementations cannot extend from PDOException,
  *    because it breaks the Throwable interface (its getCode() returns a string).
+ *
+ * @phan-suppress PhanCommentObjectInClassConstantType
  */
-interface Exceptable extends Throwable, ExceptableInternals {
+interface Exceptable extends Throwable {
 
   /**
-   * Creates a new Exceptable from the given Error Case.
+   * The default (0) Error for this Exceptable.
    *
-   * @param ErrorCode $case Error case
+   * @var Error
+   * @todo Add type constraint once php 8.2 support is dropped.
+   */
+  public const DEFAULT_ERROR = ExceptableError::UnknownError;
+
+  /**
+   * Creates a new Exceptable from the given Error case.
+   *
+   * @param ?Error $e The Error case to build from
    * @param array $context Additional exception context
-   * @param ?Throwable $previous Previous exception
-   * @throws ExceptableError If Error is invalid
+   * @param ?Throwable $previous Previous exception, if any
+   * @return Exceptable A new Exceptable on success
    */
-  public static function fromCase(
-    ErrorCase $case,
-    array $context = [],
-    ? Throwable $previous = null
-  ) : Exceptable;
+  public static function from(Error $e = null, array $context = [], Throwable $previous = null) : Exceptable;
 
   /**
-   * Gets the ErrorCase this Exceptable uses.
+   * Gets contextual information about this Exceptable.
    *
-   * @return ErrorCase An ErrorCase
-   */
-  public function case() : ErrorCase;
-
-  /**
-   * Gets contextual information about this exception.
-   *
-   * @return array Exception context, including:
+   * @return array Exceptable context, including:
    *  - string "__message__" The top-level exception message
    *  - string "__rootMessage__" The root exception message (may be the same as "__message__")
    *  - mixed  "__...__" Additional, implementation-specific information
@@ -71,31 +70,34 @@ interface Exceptable extends Throwable, ExceptableInternals {
   public function context() : array;
 
   /**
+   * Gets this Exceptable's Error case.
+   *
+   * @return Error The Error case this Exceptable was built from.
+   */
+  public function error() : Error;
+
+  /**
+   * Does this Exceptable contain the given Error case in its error chain?
+   *
+   * @param Error $e The Error case to compare against
+   * @return bool True if the given Error belongs to this or a previous Exceptable; false otherwise
+   */
+  public function has(Error $e) : bool;
+
+  /**
    * Checks whether this exception matches the given error case.
    *
-   * @param Throwable $e Subject exception
-   * @param int $code Target code
-   * @return bool True if exception class and code matches; false otherwise
+   * @param Error $e The Error case to compare against
+   * @return bool True if this Exceptable's Error case matches; false otherwise
    */
-  public function is(ErrorCase $case) : bool;
+  public function is(Error $e) : bool;
 
   /**
    * Traverses the chain of previous exception(s) and gets the root exception.
    *
+   * This may be the same as the top-level exception, if there are no previous exceptions.
+   *
    * @return Throwable The root exception
    */
   public function root() : Throwable;
-}
-
-/** Public Exceptable methods which are intended for internal use only. */
-interface ExceptableInternals {
-
-  /**
-   * Adjusts this exceptable's file/line to the previous stack frame
-   *  (to account for where it's actually constructed vs. intended to be thrown from).
-   *
-   * @internal {@used-by} Exceptable::fromCase(), ErrorCase::throw()
-   * @return Exceptable $this
-   */
-  public function _adjust(int $frame = 0) : Exceptable;
 }

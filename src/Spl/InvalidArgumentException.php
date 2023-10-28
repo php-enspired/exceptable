@@ -2,7 +2,7 @@
 /**
  * @package    at.exceptable
  * @author     Adrian <adrian@enspi.red>
- * @copyright  2014 - 2020
+ * @copyright  2014 - 2024
  * @license    GPL-3.0 (only)
  *
  *  This program is free software: you can redistribute it and/or modify it
@@ -24,7 +24,8 @@ use InvalidArgumentException as SplInvalidArgumentException;
 
 use at\exceptable\ {
   Exceptable,
-  IsExceptable
+  IsExceptable,
+  Spl\SplError
 };
 
 /**
@@ -34,15 +35,5 @@ use at\exceptable\ {
 class InvalidArgumentException extends SplInvalidArgumentException implements Exceptable {
   use IsExceptable;
 
-  /** @var int Invalid argument. */
-  public const INVALID_ARGUMENT = 0;
-
-  /** @see IsExceptable::getInfo() */
-  public const INFO = [
-    self::INVALID_ARGUMENT => [
-      "message" => "Invalid argument",
-      "formatKey" => "exceptable.spl.invalidargument",
-      "format" => "Invalid argument: {__rootMessage__}"
-    ]
-  ];
+  public const DEFAULT_ERROR = SplError::InvalidArgument;
 }

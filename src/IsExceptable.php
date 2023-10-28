@@ -2,7 +2,7 @@
 /**
  * @package    at.exceptable
  * @author     Adrian <adrian@enspi.red>
- * @copyright  2014 - 2023
+ * @copyright  2014 - 2024
  * @license    GPL-3.0 (only)
  *
  *  This program is free software: you can redistribute it and/or modify it
@@ -19,87 +19,115 @@
 declare(strict_types = 1);
 namespace at\exceptable;
 
-use MessageFormatter,
-  ResourceBundle,
-  Throwable;
+use Throwable;
 
 use at\exceptable\ {
-  ErrorCase,
+  Error,
   Exceptable
 };
 
 /**
  * Base implementation for Exceptable interface, including contexted message construction.
- * This trait MUST be used by a class which extends from Exception and implements Exceptable.
  *
- * @phan-file-suppress PhanUndeclaredConstantOfClass
- *  const INFO is expected to be defined by implementations; all usage here checks first.
+ * This trait is intended for use only by Exceptable implementations.
+ * Methods assert() this but provide no runtime checks if asserts are disabled - approach with caution!
  */
 trait IsExceptable {
-  use HasExceptableInternals;
 
-  /** @see Exceptable::fromCase() $case */
-  protected ErrorCase $case;
-
-  /** @see Exceptable::fromCase() $context */
-  protected array $context = [];
-
-  /** @see Exceptable::fromCase() $previous */
-  protected ? Throwable $previous = null;
-
-  /** @see Exceptable::fromCase() */
-  public static function fromCase(ErrorCase $case, array $context = [], ? Throwable $previous = null) : Exceptable {
+  /** @see Exceptable::from() */
+  public static function from(Error $e = null, array $context = [], Throwable $previous = null) : Exceptable {
     assert(is_a(static::class, Exceptable::class, true));
-    return (new static($case->message($this->context), $case->value, $previous))->adjust();
-  }
+    // @phan-suppress-next-line PhanUndeclaredConstantOfClass
+    $e ??= static::DEFAULT_ERROR;
+    assert($e instanceof Error);
+    // @todo Is [2] correct?
+    // @phan-suppress-next-line PhanTypeInstantiateTraitStaticOrSelf
+    $ex = new static($e, $context, $previous, 2);
+    assert($ex instanceof Exceptable);
 
-  /** @see Exceptable::is() */
-  public function is(ErrorCase $case) : bool {
-    return $this->case === $case;
-  }
-
-  /** @see Exceptable::case() */
-  public function case() : ErrorCase {
-    return $this->case;
-  }
-
-  /** @see Exceptable::context() */
-  public function context() : array {
-    return $this->context;
-  }
-
-  /** @see Exceptable::root() */
-  public function root() : Throwable {
-    assert($this instanceof Throwable);
-    return $this->findRoot($this);
+    return $ex;
   }
 
   /**
-   * Finds the root (most-previous) exception of the given exception.
+   * Finds the previous-most exception from the given exception.
    *
-   * @param Throwable $root Subject exception
-   * @return Throwable Root exception
+   * @param Throwable $ex the exception to start from
+   * @return Throwable The root exception (may be the same as the starting exception)
    */
-  protected function findRoot(Throwable $root) : Throwable {
+  private static function findRoot(Throwable $ex) : Throwable {
+    $root = $ex;
     while (($previous = $root->getPrevious()) !== null) {
       $root = $previous;
     }
 
     return $root;
   }
-}
 
-/** Base implementation for Exceptable internal methods. */
-trait HasExceptableInternals {
+  /** @see Exceptable::context() */
+  public function context() : array {
+    assert($this instanceof Throwable);
 
-  /** @see ExceptableInternals::throw() */
-  public function adjust(int $frame = 0) : Exceptable {
-    $info = $this->getTrace()[$frame] ?? null;
-    if (isset($frame)) {
-      $this->file = $info["file"];
-      $this->line = $info["line"];
+    return [
+      "__message__" => $this->getMessage()
+    ] + $this->context;
+  }
+
+  /** @see Exceptable::error() */
+  public function error() : Error {
+    return $this->error;
+  }
+
+  /** @see Exceptable::has() */
+  public function has(Error $e) : bool {
+    $ex = $this;
+    while ($ex instanceof Exceptable) {
+      if ($ex->error === $e) {
+        return true;
+      }
+
+      $ex = $ex->getPrevious();
     }
 
-    return $this;
+    return false;
+  }
+
+  /** @see Exceptable::is() */
+  public function is(Error $e) : bool {
+    return ($this->error ?? null) === $e;
+  }
+
+  /** @see Exceptable::root() */
+  public function root() : Throwable {
+    assert($this instanceof Throwable);
+
+    return static::findRoot($this);
+  }
+
+  /** Nonpublic constructor. Use Exceptable::from(). */
+  private function __construct(
+    protected Error $error,
+    protected array $context = [],
+    Throwable $previous = null,
+    int $adjust = 1
+  ) {
+    assert($this instanceof Exceptable);
+
+    if (! empty($previous)) {
+      $root = static::findRoot($previous);
+      $context["__rootType__"] = $root::class;
+      $context["__rootMessage__"] = $root->getMessage();
+      $context["__rootCode__"] = $root->getCode();
+    }
+
+    // @phan-suppress-next-line PhanTraitParentReference
+    parent::__construct($this->error->message($context), $this->error->code(), $previous);
+
+    $frame = $this->getTrace()[$adjust] ?? null;
+    if (! empty($frame)) {
+      // @phan-suppress-next-line PhanUndeclaredProperty
+      $this->file = $frame["file"];
+      // @phan-suppress-next-line PhanUndeclaredProperty
+      $this->line = $frame["line"];
+    }
   }
 }

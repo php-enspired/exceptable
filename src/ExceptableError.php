@@ -18,22 +18,31 @@
  */
 declare(strict_types = 1);
 
-namespace at\exceptable\Spl;
-
-use OverflowException as SplOverflowException;
+namespace at\exceptable;
 
 use at\exceptable\ {
-  Exceptable,
-  IsExceptable,
-  Spl\SplError
+  Error,
+  IsError
 };
 
 /**
- * Exceptable implementation of Spl's OverflowException.
- * @see https://php.net/OverflowException
+ * @phan-suppress PhanInvalidConstantExpression
+ * false positive
  */
-class OverflowException extends SplOverflowException implements Exceptable {
-  use IsExceptable;
+enum ExceptableError : int implements Error {
+  use IsError;
 
-  public const DEFAULT_ERROR = SplError::Overflow;
+  case UnacceptableError = 0;
+  case UncaughtException = 1;
+  case UnknownError = 2;
+
+  /** @see MakesMessages::MESSAGES */
+  protected const MESSAGES = [
+    self::class => [
+      self::UnacceptableError->name =>
+        "Invalid Error type '{type}' (expected enum implementing " . Error::class . ")",
+      self::UncaughtException->name => "Uncaught Exception ({__rootType__}): {__rootMessage__}",
+      self::UnknownError->name => "{__rootMessage__}"
+    ]
+  ];
 }

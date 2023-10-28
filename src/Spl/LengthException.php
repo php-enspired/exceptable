@@ -2,7 +2,7 @@
 /**
  * @package    at.exceptable
  * @author     Adrian <adrian@enspi.red>
- * @copyright  2014 - 2020
+ * @copyright  2014 - 2024
  * @license    GPL-3.0 (only)
  *
  *  This program is free software: you can redistribute it and/or modify it
@@ -24,7 +24,8 @@ use LengthException as SplLengthException;
 
 use at\exceptable\ {
   Exceptable,
-  IsExceptable
+  IsExceptable,
+  Spl\SplError
 };
 
 /**
@@ -34,15 +35,5 @@ use at\exceptable\ {
 class LengthException extends SplLengthException implements Exceptable {
   use IsExceptable;
 
-  /** @var int Length error. */
-  public const LENGTH_ERROR = 0;
-
-  /** @see IsExceptable::getInfo() */
-  public const INFO = [
-    self::LENGTH_ERROR => [
-      "message" => "Length error",
-      "formatKey" => "exceptable.spl.lengtherror",
-      "format" => "Length error: {__rootMessage__}"
-    ]
-  ];
+  public const DEFAULT_ERROR = SplError::InvalidArgument;
 }

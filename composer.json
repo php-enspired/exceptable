@@ -18,26 +18,26 @@
     "source": "https://github.com/php-enspired/exceptable"
   },
   "require": {
-    "php": "^7.4 || ^8"
+    "php": "^8.2"
   },
   "suggest": {
     "ext-intl": "Adds support for localization and ICU message formatting."
   },
   "require-dev": {
-    "phan/phan": "^5",
-    "phpunit/phpunit": "^9"
+    "phan/phan": "^5.4.3",
+    "phpunit/phpunit": "^10"
   },
   "autoload": {
     "psr-4": {
-      "AT\\Exceptable\\": "src/",
-      "AT\\Exceptable\\Tests\\": "tests/"
+      "at\\exceptable\\": "src/",
+      "at\\exceptable\\Tests\\": "tests/"
     }
   },
   "scripts": {
     "build:dist": "bin/build-dist",
     "build:locales": "genrb resources/language/*.txt -d resources/language/",
     "build:test": "bin/build-test",
-    "test:phan": "vendor/bin/phan",
+    "test:analyze": "vendor/bin/phan",
     "test:unit" : "vendor/bin/phpunit tests",
     "wiki:update": "git subtree push --prefix docs wiki master",
     "wiki:update-docs": "git subtree pull --prefix docs wiki master --squash --message='Merge wiki updates into docs'"

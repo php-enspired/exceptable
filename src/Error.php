@@ -2,7 +2,7 @@
 /**
  * @package    at.exceptable
  * @author     Adrian <adrian@enspi.red>
- * @copyright  2014 - 2023
+ * @copyright  2014 - 2024
  * @license    GPL-3.0 (only)
  *
  *  This program is free software: you can redistribute it and/or modify it
@@ -19,24 +19,33 @@
 declare(strict_types = 1);
 namespace at\exceptable;
 
-use BackedEnum,
-  Throwable;
+use Throwable;
 
 use at\peekaboo\HasMessages;
 
-/**
- * Defines error cases for an Exceptable.
- *
- * Implementing enums MUST be integer-backed (ints are error codes).
- */
-interface ErrorCase extends BackedEnum, HasMessages {
+/** Defines error cases for use by an Exceptable, or as a standalone error value. */
+interface Error extends HasMessages {
 
   /**
-   * Builds and throws an exception based on this ErrorCase.
+   * Gets the error code for this case.
+   *
+   * @return int An error code
+   */
+  public function code() : int;
+
+  /**
+   * Creates an Exceptable from this Error case.
    *
    * @param array $context Additional exception context
-   * @param ?Throwable $previous Previous exception
-   * @throws Exceptable
+   * @param ?Throwable $previous Previous exception, if any
    */
-  public function throw(array $context = [], Throwable $previous = null) : void;
+  public function exceptable(array $context = [], Throwable $previous = null) : Exceptable;
+
+  /**
+   * Gets the error message for this case, using the given context.
+   *
+   * @param array $context Exception context
+   * @return string An error message
+   */
+  public function message(array $context) : string;
 }

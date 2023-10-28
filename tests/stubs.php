@@ -3,7 +3,7 @@
  * @package    at.exceptable
  * @subpackage tests
  * @author     Adrian <adrian@enspi.red>
- * @copyright  2014 - 2020
+ * @copyright  2014 - 2023
  * @license    GPL-3.0 (only)
  *
  *  This program is free software: you can redistribute it and/or modify it
