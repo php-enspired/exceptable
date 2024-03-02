@@ -94,6 +94,7 @@ Version 5.0
 
 **Version 5** requires PHP 8.2 or greater.
 - ICU messaging system overhauled and published to its own package!
+  Check out [php-enspired/peekaboo](https://github.com/php-enspired/peekaboo) - using _exceptable_ means you get it for free, so take advantage!
 - Introduces _Error enums_, making errors into first-class citizens and opening up the ability to handle errors as values.
   Also introduces a `Return` class, which lets you handle success/error values by returning them up the chain.
 - Reworks and improves functionality for Exceptables and the Handler.
