@@ -53,6 +53,40 @@ $handler->onException(function($e) { error_log($e->getMessage()); return true; }
 // i don't know who, you think is foo, but it's not foobedobedoo
 ```
 
+errors as values
+----------------
+```php
+<?php
+
+use at\exceptable\ {
+  Error,
+  IsError,
+  Result
+};
+
+enum FooError : int implements Error {
+  use IsError;
+
+  case TheyToldMeToDoIt = 1;
+  public const MESSAGES = [self::TheyToldMeToDoIt->name => "ooh noooooooooooooooooo!"];
+}
+
+function foo(bool $fail) : Result {
+  return $fail ?
+    Result::error(FooError::TheyToldMeToDoIt) :
+    Result::value("woooooooooooooooooo hoo!");
+}
+
+$result = foo($falseOrTrueIsUpToYou);
+if ($result->isError()) {
+  echo $result->error->message();
+  // outputs "ooh noooooooooooooooooo!"
+} else {
+  echo $result->value;
+  // outputs "woooooooooooooooooo hoo!"
+}
+```
+
 see more in [the wiki](https://github.com/php-enspired/exceptable/wiki).
 
 Version 5.0
