@@ -1,4 +1,4 @@
-![](https://img.shields.io/github/release/php-enspired/exceptable.svg)  ![](https://img.shields.io/badge/PHP-7.4-blue.svg?colorB=8892BF)  ![](https://img.shields.io/badge/PHP-8-blue.svg?colorB=8892BF)  ![](https://img.shields.io/badge/license-GPL_3.0_only-blue.svg)
+![](https://img.shields.io/github/release/php-enspired/exceptable.svg)  ![](https://img.shields.io/badge/PHP-8.2-blue.svg?colorB=8892BF)  ![](https://img.shields.io/badge/PHP-8-blue.svg?colorB=8892BF)  ![](https://img.shields.io/badge/license-GPL_3.0_only-blue.svg)
 
 how exceptable!
 ===============
@@ -10,7 +10,7 @@ Exceptables are easy to create and pass details to, they provide access to error
 dependencies
 ------------
 
-Requires php 7.4 or later.
+Requires php 8.2 or later.
 
 ICU support requires the `intl` extension.
 
@@ -24,58 +24,56 @@ a quick taste
 ```php
 <?php
 
-use at\exceptable\Handler;
-use at\exceptable\Spl\RuntimeException;
+use at\exceptable\ {
+  Error,
+  Handler,
+  IsError
+};
 
-// a simple Exceptable just for you
-class FooException extends RuntimeException {
+// a simple Error, just for you
+enum FooError : int implements Error {
+  use IsError;
 
-  const UNKNOWN_FOO = 1;
-
-  const INFO = [
-    self::UNKNOWN_FOO => [
-      'message' => 'unknown foo',
-      'format' => "i don't know who, you think is foo, but it's not {foo}"
-    ]
+  case UnknownFoo = 1;
+  public const MESSAGES = [
+    self::UnknownFoo->name => "i don't know who, you think is foo, but it's not {foo}"
   ];
 }
 
-throw new FooException(FooException::UNKNOWN_FOO);
+(FooError::UnknownFoo)(["foo" => "foobedobedoo"]);
 // on your screen:
-// Fatal error: Uncaught FooException: unknown foo in ...
+// Fatal error: Uncaught at\exceptable\Spl\RuntimeException: i don't know who, you think is foo, but it's not foobedobedoo
 
 $handler = new Handler();
-$handler
-  ->onException(function($e) { error_log($e->getMessage()); return true; })
+$handler->onException(function($e) { error_log($e->getMessage()); return true; })
   ->register();
 
-$context = ['foo' => 'foobedobedoo'];
-throw new FooException(FooException::UNKNOWN_FOO, $context);
+(FooError::UnknownFoo)(["foo" => "foobedobedoo"]);
 // in your error log:
 // i don't know who, you think is foo, but it's not foobedobedoo
 ```
 
 see more in [the wiki](https://github.com/php-enspired/exceptable/wiki).
 
-Version 4.0 is here!
---------------------
+Version 5.0
+-----------
+
+**Version 5** requires PHP 8.2 or greater.
+- ICU messaging system overhauled and published to its own package!
+- Introduces _Error enums_, making errors into first-class citizens and opening up the ability to handle errors as values.
+  Also introduces a `Return` class, which lets you handle success/error values by returning them up the chain.
+- Reworks and improves functionality for Exceptables and the Handler.
+
+[Read the release notes.](https://github.com/php-enspired/exceptable/wiki/new-in-5.0)
+
+Version 4.0
+-----------
 
 **Version 4.0** requires PHP 7.4 or greater.
-- PHP 7.4 added typehints to some Throwable properties, which required changes to the `IsExceptable` trait. This means _Exceptable_ can no longer support PHP 7.3 or earlier - though that's fine, right? You've already upgraded your application to 8+ anyway, right?
+- PHP 7.4 added typehints to some Throwable properties, which required changes to the `IsExceptable` trait.
+  This means _Exceptable_ can no longer support PHP 7.3 or earlier - though that's fine, right?
+  You've already upgraded your application to 8+ anyway, right?
 - right?
-
-Version 3.0 is here!
---------------------
-
-**Version 3.0** requires PHP 7.3 or greater and introduces some exciting changes from version 2:
-- Support* for ICU locales, message formats, and resource bundles!\
-  \* _requires the intl extension._
-- Ready-to-extend (or just use) `Exceptable` classes based on the built-in SPL Exception classes!
-- The generic `Exceptable` Exception base class has been removed.
-- Introduces a "debug mode" for Handlers!
-- Handlers are now Logger (e.g., Monolog)-aware!
-
-[Read more about the 3.0 release](https://github.com/php-enspired/exceptable/wiki/new-in-3.0).
 
 docs
 ----

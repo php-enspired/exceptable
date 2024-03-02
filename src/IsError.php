@@ -20,8 +20,7 @@ declare(strict_types = 1);
 namespace at\exceptable;
 
 use BackedEnum,
-  Throwable,
-  UnitEnum;
+  Throwable;
 
 use at\exceptable\ {
   Error,
@@ -33,15 +32,24 @@ use at\peekaboo\MakesMessages;
 /**
  * Defines error cases for an Exceptable.
  *
+ * Implementing Enums may be integer-backed; these values will be used as error codes.
+ * Otherwise, error codes will be determined by the case's declaration order.
+ *
  * Implementing Enums may define MESSAGES to provide default message templates.
- * If not defined, the case name will be used.
+ * Otherwise, messages will be built using the Error class and case name.
  */
 trait isError {
   use MakesMessages;
 
+  /** @see Error::throw() */
+  public function __invoke(array $context = [], Throwable $previous = null) : Exceptable {
+    assert($this instanceof Error);
+    return $this->adjustExceptable(new RuntimeException($this, $context, $previous), 2);
+  }
+
   /** @see Error::code() */
   public function code() : int {
-    assert($this instanceof UnitEnum);
+    assert($this instanceof Error);
 
     // return enum value if integers provided
     if ($this instanceof BackedEnum && is_int($this->value)) {
@@ -58,7 +66,7 @@ trait isError {
 
   /** @see Error::message() */
   public function message(array $context) : string {
-    assert($this instanceof UnitEnum);
+    assert($this instanceof Error);
 
     $error = static::class . ".{$this->name}";
     $message = $this->makeMessage($this->name, $context);
@@ -68,11 +76,30 @@ trait isError {
   }
 
   /** @see Error::throw() */
-  public function exceptable(array $context = [], Throwable $previous = null) : Exceptable {
+  public function newExceptable(array $context = [], Throwable $previous = null) : Exceptable {
     assert($this instanceof Error);
-    return RuntimeException::from($this, $context, $previous);
+    return $this->adjustExceptable(new RuntimeException($this, $context, $previous), 1);
   }
 
-  /** @see UnitEnum::cases() */
-  abstract public static function cases() : array;
+  /**
+   * Adjusts the Exceptable's $file and $line to reflect the location in code it was thrown from
+   *  (vs. where it was actually instantiated).
+   *
+   * @param Exceptable $x The Exceptable to modify
+   * @return Exceptable The modified Exceptable
+   */
+  private function adjustExceptable(Exceptable $x, int $adjust) : Exceptable {
+    (function () use ($x, $adjust) {
+      $frame = $x->getTrace()[$adjust] ?? null;
+      // no-op if no such frame
+      if (! empty($frame)) {
+        // @phan-suppress-next-line PhanUndeclaredProperty
+        $x->file = $frame["file"];
+        // @phan-suppress-next-line PhanUndeclaredProperty
+        $x->line = $frame["line"];
+      }
+    })->call($x, $x);
+
+    return $x;
+  }
 }

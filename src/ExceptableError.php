@@ -20,9 +20,13 @@ declare(strict_types = 1);
 
 namespace at\exceptable;
 
+use Throwable;
+
 use at\exceptable\ {
   Error,
-  IsError
+  IsError,
+  Spl\LogicException,
+  Spl\RuntimeException
 };
 
 /**
@@ -35,14 +39,26 @@ enum ExceptableError : int implements Error {
   case UnacceptableError = 0;
   case UncaughtException = 1;
   case UnknownError = 2;
+  case HandlerFailed = 3;
 
   /** @see MakesMessages::MESSAGES */
-  protected const MESSAGES = [
+  public const MESSAGES = [
     self::class => [
       self::UnacceptableError->name =>
         "Invalid Error type '{type}' (expected enum implementing " . Error::class . ")",
       self::UncaughtException->name => "Uncaught Exception ({__rootType__}): {__rootMessage__}",
-      self::UnknownError->name => "{__rootMessage__}"
+      self::UnknownError->name => "{__rootMessage__}",
+      self::HandlerFailed->name => "ExceptionHandler ({type}) failed: {__rootMessage__}"
     ]
   ];
+
+  /** @see Error::exceptable() */
+  public function newExceptable(array $context = [], Throwable $previous = null) : Exceptable {
+    assert($this instanceof Error);
+    return match ($this) {
+      self::UnacceptableError, self::HandlerFailed => new LogicException($this, $context, $previous),
+      self::UncaughtException, self::UnknownError => new RuntimeException($this, $context, $previous),
+      default => new RuntimeException($this, $context, $previous)
+    };
+  }
 }

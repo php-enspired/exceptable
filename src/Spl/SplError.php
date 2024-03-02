@@ -64,59 +64,42 @@ enum SplError : int implements Error {
   case UnexpectedValue = 13;
 
   /** @see Error::MESSAGES */
-  protected const MESSAGES = [
+  public const MESSAGES = [
     self::class => [
-      self::BadFunctionCall->value => "{__rootMessage__}",
-      self::BadMethodCall->value => "{__rootMessage__}",
-      self::Domain->value => "{__rootMessage__}",
-      self::InvalidArgument->value => "{__rootMessage__}",
-      self::Length->value => "{__rootMessage__}",
-      self::Logic->value => "{__rootMessage__}",
-      self::OutOfBounds->value => "{__rootMessage__}",
-      self::OutOfRange->value => "{__rootMessage__}",
-      self::Overflow->value => "{__rootMessage__}",
-      self::Range->value => "{__rootMessage__}",
-      self::Runtime->value => "{__rootMessage__}",
-      self::Underflow->value => "{__rootMessage__}",
-      self::UnexpectedValue->value => "{__rootMessage__}"
+      self::BadFunctionCall->name => "{__rootMessage__}",
+      self::BadMethodCall->name => "{__rootMessage__}",
+      self::Domain->name => "{__rootMessage__}",
+      self::InvalidArgument->name => "{__rootMessage__}",
+      self::Length->name => "{__rootMessage__}",
+      self::Logic->name => "{__rootMessage__}",
+      self::OutOfBounds->name => "{__rootMessage__}",
+      self::OutOfRange->name => "{__rootMessage__}",
+      self::Overflow->name => "{__rootMessage__}",
+      self::Range->name => "{__rootMessage__}",
+      self::Runtime->name => "{__rootMessage__}",
+      self::Underflow->name => "{__rootMessage__}",
+      self::UnexpectedValue->name => "{__rootMessage__}"
     ]
   ];
 
   /** @see Error::exceptable() */
-  public function exceptable(array $context = [], Throwable $previous = null) : Exceptable {
+  public function newExceptable(array $context = [], Throwable $previous = null) : Exceptable {
     assert($this instanceof Error);
     return match ($this) {
-      self::BadFunctionCall => BadFunctionCallException::from($this, $context, $previous),
-      self::BadMethodCall => BadMethodCallException::from($this, $context, $previous),
-      self::Domain => DomainException::from($this, $context, $previous),
-      self::InvalidArgument => InvalidArgumentException::from($this, $context, $previous),
-      self::Length => LengthException::from($this, $context, $previous),
-      self::Logic => LogicException::from($this, $context, $previous),
-      self::OutOfBounds => OutOfBoundsException::from($this, $context, $previous),
-      self::OutOfRange => OutOfRangeException::from($this, $context, $previous),
-      self::Overflow => OverflowException::from($this, $context, $previous),
-      self::Range => RangeException::from($this, $context, $previous),
-      self::Runtime => RuntimeException::from($this, $context, $previous),
-      self::Underflow => UnderflowException::from($this, $context, $previous),
-      self::UnexpectedValue => UnexpectedValueException::from($this, $context, $previous),
-      default => RuntimeException::from($this, $context, $previous)
+      self::BadFunctionCall => new BadFunctionCallException($this, $context, $previous),
+      self::BadMethodCall => new BadMethodCallException($this, $context, $previous),
+      self::Domain => new DomainException($this, $context, $previous),
+      self::InvalidArgument => new InvalidArgumentException($this, $context, $previous),
+      self::Length => new LengthException($this, $context, $previous),
+      self::Logic => new LogicException($this, $context, $previous),
+      self::OutOfBounds => new OutOfBoundsException($this, $context, $previous),
+      self::OutOfRange => new OutOfRangeException($this, $context, $previous),
+      self::Overflow => new OverflowException($this, $context, $previous),
+      self::Range => new RangeException($this, $context, $previous),
+      self::Runtime => new RuntimeException($this, $context, $previous),
+      self::Underflow => new UnderflowException($this, $context, $previous),
+      self::UnexpectedValue => new UnexpectedValueException($this, $context, $previous),
+      default => new RuntimeException($this, $context, $previous)
     };
-
-    // return match ($this) {
-    //   self::BadFunctionCall => (fn () => new BadFunctionCallException($this, $context, $previous, 2))->call($e, $e),
-    //   self::BadMethodCall => (fn () => new BadMethodCallException($this, $context, $previous, 2))->call($e, $e),
-    //   self::Domain => (fn () => new DomainException($this, $context, $previous, 2))->call($e, $e),
-    //   self::InvalidArgument => (fn () => new InvalidArgumentException($this, $context, $previous, 2))->call($e, $e),
-    //   self::Length => (fn () => new LengthException($this, $context, $previous, 2))->call($e, $e),
-    //   self::Logic => (fn () => new LogicException($this, $context, $previous, 2))->call($e, $e),
-    //   self::OutOfBounds => (fn () => new OutOfBoundsException($this, $context, $previous, 2))->call($e, $e),
-    //   self::OutOfRange => (fn () => new OutOfRangeException($this, $context, $previous, 2))->call($e, $e),
-    //   self::Overflow => (fn () => new OverflowException($this, $context, $previous, 2))->call($e, $e),
-    //   self::Range => (fn () => new RangeException($this, $context, $previous, 2))->call($e, $e),
-    //   self::Runtime => (fn () => new RuntimeException($this, $context, $previous, 2))->call($e, $e),
-    //   self::Underflow => (fn () => new UnderflowException($this, $context, $previous, 2))->call($e, $e),
-    //   self::UnexpectedValue => (fn () => new UnexpectedValueException($this, $context, $previous, 2))->call($e, $e),
-    //   default => RuntimeException::from($this, $context, $previous)
-    // };
   }
 }

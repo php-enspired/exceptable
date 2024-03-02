@@ -19,12 +19,16 @@
 declare(strict_types = 1);
 namespace at\exceptable;
 
-use Throwable;
+use Throwable,
+  UnitEnum;
 
 use at\peekaboo\HasMessages;
 
 /** Defines error cases for use by an Exceptable, or as a standalone error value. */
-interface Error extends HasMessages {
+interface Error extends HasMessages, UnitEnum {
+
+  /** @see Error::newExceptable() */
+  public function __invoke(array $context = [], Throwable $previous = null) : Exceptable;
 
   /**
    * Gets the error code for this case.
@@ -34,18 +38,19 @@ interface Error extends HasMessages {
   public function code() : int;
 
   /**
-   * Creates an Exceptable from this Error case.
-   *
-   * @param array $context Additional exception context
-   * @param ?Throwable $previous Previous exception, if any
-   */
-  public function exceptable(array $context = [], Throwable $previous = null) : Exceptable;
-
-  /**
    * Gets the error message for this case, using the given context.
    *
    * @param array $context Exception context
    * @return string An error message
    */
   public function message(array $context) : string;
+
+  /**
+   * Creates an Exceptable from this Error case.
+   *
+   * @param array $context Additional exception context
+   * @param ?Throwable $previous Previous exception, if any
+   * @return Exceptable A new Exceptable using this Error case
+   */
+  public function newExceptable(array $context = [], Throwable $previous = null) : Exceptable;
 }

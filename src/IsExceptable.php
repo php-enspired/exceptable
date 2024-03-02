@@ -34,29 +34,42 @@ use at\exceptable\ {
  */
 trait IsExceptable {
 
-  /** @see Exceptable::from() */
-  public static function from(Error $e = null, array $context = [], Throwable $previous = null) : Exceptable {
-    assert(is_a(static::class, Exceptable::class, true));
-    // @phan-suppress-next-line PhanUndeclaredConstantOfClass
-    $e ??= static::DEFAULT_ERROR;
-    assert($e instanceof Error);
-    // @todo Is [2] correct?
-    // @phan-suppress-next-line PhanTypeInstantiateTraitStaticOrSelf
-    $ex = new static($e, $context, $previous, 2);
-    assert($ex instanceof Exceptable);
+  /** @see Exceptable::__construct() */
+  public function __construct(
+    protected ? Error $error = null,
+    protected array $context = [],
+    Throwable $previous = null
+  ) {
+    assert($this instanceof Exceptable);
 
-    return $ex;
+    // @phan-suppress-next-line PhanUndeclaredConstantOfClass
+    $this->error ??= static::DEFAULT_ERROR;
+
+    // if there's no previous exception, these won't be available to the message formatter.
+    if (! empty($previous)) {
+      $root = $this->findRoot($previous);
+      $context["__rootType__"] = $root::class;
+      $context["__rootMessage__"] = $root->getMessage();
+      $context["__rootCode__"] = $root->getCode();
+    } else {
+      $context["__rootType__"] = static::class;
+      $context["__rootMessage__"] = "";
+      $context["__rootCode__"] = $this->error->code();
+    }
+
+    // @phan-suppress-next-line PhanTraitParentReference
+    parent::__construct($this->error->message($context), $this->error->code(), $previous);
   }
 
   /**
    * Finds the previous-most exception from the given exception.
    *
-   * @param Throwable $ex the exception to start from
+   * @param Throwable $t the exception to start from
    * @return Throwable The root exception (may be the same as the starting exception)
    */
-  private static function findRoot(Throwable $ex) : Throwable {
-    $root = $ex;
-    while (($previous = $root->getPrevious()) !== null) {
+  private static function findRoot(Throwable $t) : Throwable {
+    $root = $t;
+    while (($previous = $root->getPrevious()) instanceof Throwable) {
       $root = $previous;
     }
 
@@ -74,60 +87,32 @@ trait IsExceptable {
 
   /** @see Exceptable::error() */
   public function error() : Error {
+    // @phan-suppress-next-line PhanTypeMismatchReturnNullable
     return $this->error;
   }
 
   /** @see Exceptable::has() */
-  public function has(Error $e) : bool {
-    $ex = $this;
-    while ($ex instanceof Exceptable) {
-      if ($ex->error === $e) {
+  public function has(Error $error) : bool {
+    $t = $this;
+    while ($t instanceof Throwable) {
+      if ($t instanceof Exceptable && $t->error === $error) {
         return true;
       }
 
-      $ex = $ex->getPrevious();
+      $t = $t->getPrevious();
     }
 
     return false;
   }
 
   /** @see Exceptable::is() */
-  public function is(Error $e) : bool {
-    return ($this->error ?? null) === $e;
+  public function is(Error $error) : bool {
+    return $this->error === $error;
   }
 
   /** @see Exceptable::root() */
   public function root() : Throwable {
     assert($this instanceof Throwable);
-
-    return static::findRoot($this);
-  }
-
-  /** Nonpublic constructor. Use Exceptable::from(). */
-  private function __construct(
-    protected Error $error,
-    protected array $context = [],
-    Throwable $previous = null,
-    int $adjust = 1
-  ) {
-    assert($this instanceof Exceptable);
-
-    if (! empty($previous)) {
-      $root = static::findRoot($previous);
-      $context["__rootType__"] = $root::class;
-      $context["__rootMessage__"] = $root->getMessage();
-      $context["__rootCode__"] = $root->getCode();
-    }
-
-    // @phan-suppress-next-line PhanTraitParentReference
-    parent::__construct($this->error->message($context), $this->error->code(), $previous);
-
-    $frame = $this->getTrace()[$adjust] ?? null;
-    if (! empty($frame)) {
-      // @phan-suppress-next-line PhanUndeclaredProperty
-      $this->file = $frame["file"];
-      // @phan-suppress-next-line PhanUndeclaredProperty
-      $this->line = $frame["line"];
-    }
+    return $this->findRoot($this);
   }
 }

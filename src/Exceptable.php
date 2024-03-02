@@ -36,6 +36,7 @@ use at\exceptable\ {
  *  - implementations cannot extend from PDOException,
  *    because it breaks the Throwable interface (its getCode() returns a string).
  *
+ * @property $error
  * @phan-suppress PhanCommentObjectInClassConstantType
  */
 interface Exceptable extends Throwable {
@@ -49,14 +50,12 @@ interface Exceptable extends Throwable {
   public const DEFAULT_ERROR = ExceptableError::UnknownError;
 
   /**
-   * Creates a new Exceptable from the given Error case.
-   *
    * @param ?Error $e The Error case to build from
    * @param array $context Additional exception context
    * @param ?Throwable $previous Previous exception, if any
    * @return Exceptable A new Exceptable on success
    */
-  public static function from(Error $e = null, array $context = [], Throwable $previous = null) : Exceptable;
+  public function __construct(Error $e = null, array $context = [], Throwable $previous = null);
 
   /**
    * Gets contextual information about this Exceptable.

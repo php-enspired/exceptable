@@ -18,10 +18,11 @@
     "source": "https://github.com/php-enspired/exceptable"
   },
   "require": {
-    "php": "^8.2"
+    "php": "^8.2",
+    "php-enspired/peekaboo": "^1"
   },
   "suggest": {
-    "ext-intl": "Adds support for localization and ICU message formatting."
+    "ext-intl": "support for localization and full ICU message formatting features"
   },
   "require-dev": {
     "phan/phan": "^5.4.3",
