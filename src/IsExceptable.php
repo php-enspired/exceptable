@@ -34,6 +34,21 @@ use at\exceptable\ {
  */
 trait IsExceptable {
 
+  /**
+   * Finds the previous-most exception from the given exception.
+   *
+   * @param Throwable $t the exception to start from
+   * @return Throwable The root exception (may be the same as the starting exception)
+   */
+  private static function findRoot(Throwable $t) : Throwable {
+    $root = $t;
+    while (($previous = $root->getPrevious()) instanceof Throwable) {
+      $root = $previous;
+    }
+
+    return $root;
+  }
+
   /** @see Exceptable::__construct() */
   public function __construct(
     protected ? Error $error = null,
@@ -42,8 +57,7 @@ trait IsExceptable {
   ) {
     assert($this instanceof Exceptable);
 
-    // @phan-suppress-next-line PhanUndeclaredConstantOfClass
-    $this->error ??= static::DEFAULT_ERROR;
+    $this->error ??= $this->defaultError();
 
     // if there's no previous exception, these won't be available to the message formatter.
     if (! empty($previous)) {
@@ -59,21 +73,6 @@ trait IsExceptable {
 
     // @phan-suppress-next-line PhanTraitParentReference
     parent::__construct($this->error->message($context), $this->error->code(), $previous);
-  }
-
-  /**
-   * Finds the previous-most exception from the given exception.
-   *
-   * @param Throwable $t the exception to start from
-   * @return Throwable The root exception (may be the same as the starting exception)
-   */
-  private static function findRoot(Throwable $t) : Throwable {
-    $root = $t;
-    while (($previous = $root->getPrevious()) instanceof Throwable) {
-      $root = $previous;
-    }
-
-    return $root;
   }
 
   /** @see Exceptable::context() */
@@ -114,5 +113,14 @@ trait IsExceptable {
   public function root() : Throwable {
     assert($this instanceof Throwable);
     return $this->findRoot($this);
+  }
+
+  /**
+   * Gets the default (code 0) Error case for this Exceptable.
+   *
+   * @return Error
+   */
+  protected function defaultError() : Error {
+    return ExceptableError::UnknownError;
   }
 }

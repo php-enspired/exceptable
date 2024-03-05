@@ -24,6 +24,7 @@ use BackedEnum,
 
 use at\exceptable\ {
   Error,
+  Exceptable,
   Spl\RuntimeException
 };
 
@@ -44,7 +45,10 @@ trait isError {
   /** @see Error::throw() */
   public function __invoke(array $context = [], Throwable $previous = null) : Exceptable {
     assert($this instanceof Error);
-    return $this->adjustExceptable(new RuntimeException($this, $context, $previous), 2);
+    $x = $this->exceptableType();
+    assert(is_a($x, Exceptable::class, true));
+
+    return $this->adjustExceptable(new $x($this, $context, $previous), 1);
   }
 
   /** @see Error::code() */
@@ -64,6 +68,11 @@ trait isError {
     }
   }
 
+  /** @see Error::exceptableType() */
+  public function exceptableType() : string {
+    return RuntimeException::class;
+  }
+
   /** @see Error::message() */
   public function message(array $context) : string {
     assert($this instanceof Error);
@@ -78,7 +87,10 @@ trait isError {
   /** @see Error::throw() */
   public function newExceptable(array $context = [], Throwable $previous = null) : Exceptable {
     assert($this instanceof Error);
-    return $this->adjustExceptable(new RuntimeException($this, $context, $previous), 1);
+    $x = $this->exceptableType();
+    assert(is_a($x, Exceptable::class, true));
+
+    return $this->adjustExceptable(new $x($this, $context, $previous), 1);
   }
 
   /**

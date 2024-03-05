@@ -55,36 +55,48 @@ $handler->onException(function($e) { error_log($e->getMessage()); return true; }
 
 errors as values
 ----------------
+
+Having errors available to your application as normal values also makes _not_ throwing exceptions a viable solution. The _Result pattern_, for example, is a functional programming approach to error handling that treats error conditions as normal, expected return values. This can encourage you to consider how to handle error cases more carefully and closer to the source, as well as being a benefit to static analysis and comprehensibility in general. See [Larry Garfield's excellent article](https://peakd.com/hive-168588/@crell/much-ado-about-null) for more.
+
 ```php
 <?php
 
 use at\exceptable\ {
   Error,
-  IsError,
-  Result
+  IsError
 };
 
 enum FooError : int implements Error {
   use IsError;
 
   case TheyToldMeToDoIt = 1;
-  public const MESSAGES = [self::TheyToldMeToDoIt->name => "ooh noooooooooooooooooo!"];
+  public const MESSAGES = [
+    self::TheyToldMeToDoIt->name => "ooh noooooooooooooooooo!"
+  ];
 }
 
-function foo(bool $fail) : Result {
+function foo(bool $fail) : string|FooError {
   return $fail ?
-    Result::error(FooError::TheyToldMeToDoIt) :
-    Result::value("woooooooooooooooooo hoo!");
+    FooError::TheyToldMeToDoIt :
+    "woooooooooooooooooo hoo!";
 }
 
-$result = foo($falseOrTrueIsUpToYou);
-if ($result->isError()) {
-  echo $result->error->message();
+$bool = maybeTrueMaybeFalse();
+$result = foo($bool);
+if ($result instanceof FooError) {
+  echo $result->message();
   // outputs "ooh noooooooooooooooooo!"
-} else {
-  echo $result->value;
-  // outputs "woooooooooooooooooo hoo!"
+
+  $bool = !! $bool;
+  $newResult = foo($bool);
 }
+
+echo $newResult;
+// outputs "woooooooooooooooooo hoo!"
+```
+...and if you want to make _everybody_ mad, you can still throw them.
+```php
+throw $result(["yes" => "i know i'm horrible"]);
 ```
 
 see more in [the wiki](https://github.com/php-enspired/exceptable/wiki).
@@ -94,9 +106,8 @@ Version 5.0
 
 **Version 5** requires PHP 8.2 or greater.
 - ICU messaging system overhauled and published to its own package!
-  Check out [php-enspired/peekaboo](https://github.com/php-enspired/peekaboo) - using _exceptable_ means you get it for free, so take advantage!
-- Introduces _Error enums_, making errors into first-class citizens and opening up the ability to handle errors as values.
-  Also introduces a `Return` class, which lets you handle success/error values by returning them up the chain.
+  Check out [php-enspired/peekaboo](https://packagist.org/packages/php-enspired/peekaboo) - using _exceptable_ means you get it for free, so take advantage!
+- Introduces the _Error_ interface for enums, making errors into first-class citizens and opening up the ability to handle errors as values.
 - Reworks and improves functionality for Exceptables and the Handler.
 
 [Read the release notes.](https://github.com/php-enspired/exceptable/wiki/new-in-5.0)

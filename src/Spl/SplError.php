@@ -20,11 +20,8 @@ declare(strict_types = 1);
 
 namespace at\exceptable\Spl;
 
-use Throwable;
-
 use at\exceptable\ {
   Error,
-  Exceptable,
   IsError,
   Spl\BadFunctionCallException,
   Spl\BadMethodCallException,
@@ -83,23 +80,23 @@ enum SplError : int implements Error {
   ];
 
   /** @see Error::exceptable() */
-  public function newExceptable(array $context = [], Throwable $previous = null) : Exceptable {
+  public function exceptableType() : string {
     assert($this instanceof Error);
     return match ($this) {
-      self::BadFunctionCall => new BadFunctionCallException($this, $context, $previous),
-      self::BadMethodCall => new BadMethodCallException($this, $context, $previous),
-      self::Domain => new DomainException($this, $context, $previous),
-      self::InvalidArgument => new InvalidArgumentException($this, $context, $previous),
-      self::Length => new LengthException($this, $context, $previous),
-      self::Logic => new LogicException($this, $context, $previous),
-      self::OutOfBounds => new OutOfBoundsException($this, $context, $previous),
-      self::OutOfRange => new OutOfRangeException($this, $context, $previous),
-      self::Overflow => new OverflowException($this, $context, $previous),
-      self::Range => new RangeException($this, $context, $previous),
-      self::Runtime => new RuntimeException($this, $context, $previous),
-      self::Underflow => new UnderflowException($this, $context, $previous),
-      self::UnexpectedValue => new UnexpectedValueException($this, $context, $previous),
-      default => new RuntimeException($this, $context, $previous)
+      self::BadFunctionCall => BadFunctionCallException::class,
+      self::BadMethodCall => BadMethodCallException::class,
+      self::Domain => DomainException::class,
+      self::InvalidArgument => InvalidArgumentException::class,
+      self::Length => LengthException::class,
+      self::Logic => LogicException::class,
+      self::OutOfBounds => OutOfBoundsException::class,
+      self::OutOfRange => OutOfRangeException::class,
+      self::Overflow => OverflowException::class,
+      self::Range => RangeException::class,
+      self::Runtime => RuntimeException::class,
+      self::Underflow => UnderflowException::class,
+      self::UnexpectedValue => UnexpectedValueException::class,
+      default => RuntimeException::class
     };
   }
 }

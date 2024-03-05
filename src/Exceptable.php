@@ -22,10 +22,7 @@ namespace at\exceptable;
 
 use Throwable;
 
-use at\exceptable\ {
-  Error,
-  ExceptableError
-};
+use at\exceptable\Error;
 
 /**
  * Augmented interface for exceptional exceptions.
@@ -40,14 +37,6 @@ use at\exceptable\ {
  * @phan-suppress PhanCommentObjectInClassConstantType
  */
 interface Exceptable extends Throwable {
-
-  /**
-   * The default (0) Error for this Exceptable.
-   *
-   * @var Error
-   * @todo Add type constraint once php 8.2 support is dropped.
-   */
-  public const DEFAULT_ERROR = ExceptableError::UnknownError;
 
   /**
    * @param ?Error $e The Error case to build from

@@ -38,6 +38,13 @@ interface Error extends HasMessages, UnitEnum {
   public function code() : int;
 
   /**
+   * Gets the fully qualified name of the proper Exceptable class to throw this Error as.
+   *
+   * @return string Exceptable FQCN
+   */
+  public function exceptableType() : string;
+
+  /**
    * Gets the error message for this case, using the given context.
    *
    * @param array $context Exception context
