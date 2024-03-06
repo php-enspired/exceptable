@@ -41,7 +41,7 @@ use at\exceptable\ {
  *  - override exceptableFQCN() method to provide the name of the exceptable to test
  *  - override *Provider methods to provide appropriate input and expectations
  */
-class IsExceptableTest extends TestCase {
+abstract class IsExceptableTest extends TestCase {
 
   /**
    * Path to resource bundle used for this test.

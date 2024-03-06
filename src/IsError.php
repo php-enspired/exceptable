@@ -48,7 +48,7 @@ trait isError {
     $x = $this->exceptableType();
     assert(is_a($x, Exceptable::class, true));
 
-    return $this->adjustExceptable(new $x($this, $context, $previous), 1);
+    return $this->adjustExceptable(new $x($this, $context, $previous), 0);
   }
 
   /** @see Error::code() */
@@ -78,7 +78,7 @@ trait isError {
     assert($this instanceof Error);
 
     $error = static::class . ".{$this->name}";
-    $message = $this->makeMessage($this->name, $context);
+    $message = $this->makeMessage(static::class . ".{$this->name}", $context);
     return empty($message) ?
       $error :
       "{$error}: {$message}";
@@ -90,7 +90,7 @@ trait isError {
     $x = $this->exceptableType();
     assert(is_a($x, Exceptable::class, true));
 
-    return $this->adjustExceptable(new $x($this, $context, $previous), 1);
+    return $this->adjustExceptable(new $x($this, $context, $previous), 0);
   }
 
   /**

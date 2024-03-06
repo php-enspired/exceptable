@@ -62,17 +62,17 @@ trait IsExceptable {
     // if there's no previous exception, these won't be available to the message formatter.
     if (! empty($previous)) {
       $root = $this->findRoot($previous);
-      $context["__rootType__"] = $root::class;
-      $context["__rootMessage__"] = $root->getMessage();
-      $context["__rootCode__"] = $root->getCode();
+      $this->context["__rootType__"] = $root::class;
+      $this->context["__rootMessage__"] = $root->getMessage();
+      $this->context["__rootCode__"] = $root->getCode();
     } else {
-      $context["__rootType__"] = static::class;
-      $context["__rootMessage__"] = "";
-      $context["__rootCode__"] = $this->error->code();
+      $this->context["__rootType__"] = static::class;
+      $this->context["__rootMessage__"] = "";
+      $this->context["__rootCode__"] = $this->error->code();
     }
 
     // @phan-suppress-next-line PhanTraitParentReference
-    parent::__construct($this->error->message($context), $this->error->code(), $previous);
+    parent::__construct($this->error->message($this->context), $this->error->code(), $previous);
   }
 
   /** @see Exceptable::context() */

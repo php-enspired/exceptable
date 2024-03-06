@@ -3,7 +3,7 @@
  * @package    at.exceptable
  * @subpackage tests
  * @author     Adrian <adrian@enspi.red>
- * @copyright  2014 - 2023
+ * @copyright  2014 - 2024
  * @license    GPL-3.0 (only)
  *
  *  This program is free software: you can redistribute it and/or modify it
@@ -26,44 +26,41 @@ use Exception,
   Throwable;
 
 use at\exceptable\ {
+  Error,
   Exceptable,
-  ExceptableError,
   IsExceptable,
   Tests\TestCase
 };
 
 /**
- * Basic tests for the default ErrorCase implementations.
+ * Basic tests for the default Error implementations.
  *
- * @covers at\exceptable\IsErrorCase
- * @covers at\exceptable\IsBackedErrorCase
+ * @covers at\exceptable\IsError
  *
- * This test case can (should) be extended to test other concrete implementations:
- *  - override errorCase() to provide the ErrorCase to test
+ * Base class to test implementations of Error.
+ *  - override error() to provide the Error to test
  *  - override *Provider() methods to provide appropriate input and expectations
  */
-class ErrorCaseTest extends TestCase {
+abstract class ErrorTestCase extends TestCase {
 
-  /** @see testExceptableFrom() */
-  public function exceptableFromProvider() : array {
+  abstract public static function newExceptableProvider() : array;
 
-  }
-
-  public function testExceptableFrom(
-    ErrorCase $error,
+  /** @dataProvider newExceptableProvider */
+  public function testNewExceptable(
+    Error $error,
     ? array $context,
     ? Throwable $previous,
     Exceptable $expected
   ) {
     $line = __LINE__ + 1;
-    $actual = $error->from($context, $previous);
+    $actual = $error($context, $previous);
 
-    $this->assertExceptableIsExceptable($actual, $expected);
+    $this->assertExceptableIsExceptable($actual, get_class($expected));
     $this->assertExceptableOrigination($actual, __FILE__, $line);
     $this->assertExceptableHasCode($actual, $expected->getCode());
     $this->assertExceptableHasMessage($actual, $expected->getMessage());
-    $this->assertExceptableHasCase($actual, $error);
-    $this->assertExceptableHasContext($actual, $expected->getContext());
+    $this->assertExceptableHasError($actual, $error);
+    $this->assertExceptableHasContext($actual, $expected->context());
     $this->assertExceptableHasPrevious($actual, $expected->getPrevious());
     $this->assertExceptableHasRoot($actual, $expected->getPrevious() ?? $actual);
   }
@@ -103,13 +100,13 @@ class ErrorCaseTest extends TestCase {
    * Asserts test subject has the expected error case.
    *
    * @param mixed $actual Test subject
-   * @param int $case Expected error case
+   * @param Error $rttot Expected error case
    */
-  protected function assertExceptableHasCase(Exceptable $actual, ErrorCase $case) : void {
+  protected function assertExceptableHasError(Exceptable $actual, Error $error) : void {
     $this->assertSame(
-      $code,
-      $actual->case(),
-      "Exceptable does not report expected case '{$case->name}'"
+      $error,
+      $actual->error(),
+      "Exceptable does not report expected error case '{$error->name}'"
     );
   }
 
@@ -126,7 +123,6 @@ class ErrorCaseTest extends TestCase {
       "Exceptable does not report expected code '{$code}'"
     );
   }
-
 
   /**
    * Asserts test subject has the expected (possibly formatted) message.
@@ -149,23 +145,19 @@ class ErrorCaseTest extends TestCase {
    * @param ?array $context Expected contextual information
    */
   protected function assertExceptableHasContext(Exceptable $actual, ? array $context) : void {
-    $actual = $actual->getContext();
+    $actual = $actual->context();
 
-    $this->assertArrayHasKey(
-      "__rootMessage__",
-      $actual,
-      "getContext()[___rootMessage_] is missing"
-    );
+    $this->assertArrayHasKey("__rootMessage__", $actual, "context()[__rootMessage_] is missing");
     $this->assertIsString($actual["__rootMessage__"]);
 
     if (isset($context)) {
       foreach ($context as $key => $value) {
-        $this->assertArrayHasKey($key, $actual, "getContext()[{$key}] is missing");
+        $this->assertArrayHasKey($key, $actual, "context()[{$key}] is missing");
 
         $this->assertSame(
           $value,
           $actual[$key],
-          "getContext()[{$key}] does not hold expected value ({$this->asString($value)})"
+          "context()[{$key}] does not hold expected value ({$this->asString($value)})"
         );
       }
     }
@@ -194,7 +186,7 @@ class ErrorCaseTest extends TestCase {
     $fqcn = get_class($root);
     $this->assertSame(
       $root,
-      $actual->getRoot(),
+      $actual->root(),
       "getPrevious() does not report expected root exception ({$fqcn})"
     );
   }

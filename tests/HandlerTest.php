@@ -51,7 +51,7 @@ use Psr\Log\ {
  *
  * @covers at\exceptable\Handler
  */
-class HandlerTest extends TestCase {
+abstract class HandlerTest extends TestCase {
 
   /** @var array[] List of reported error handling function invocations. */
   protected static $registered = [];

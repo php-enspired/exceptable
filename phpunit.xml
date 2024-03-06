@@ -5,9 +5,5 @@
   xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd"
   colors="true"
   cacheDirectory=".phpunit.cache">
-  <source>
-    <include>
-      <directory suffix=".php">./src</directory>
-    </include>
-  </source>
+
 </phpunit>
