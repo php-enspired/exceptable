@@ -43,7 +43,19 @@ use at\exceptable\ {
  */
 abstract class ErrorTestCase extends TestCase {
 
+  abstract public static function codeProvider() : array;
+  abstract public static function messageProvider() : array;
   abstract public static function newExceptableProvider() : array;
+
+  /** @dataProvider codeProvider */
+  public function testCode(Error $error, int $expected) {
+    $this->assertSame($error->code(), $expected, "Error returns wrong error code");
+  }
+
+  /** @dataProvider messageProvider */
+  public function testMessage(Error $error, array $context, string $expected) {
+    $this->assertSame($expected, $error->message($context), "Error returns wrong error message");
+  }
 
   /** @dataProvider newExceptableProvider */
   public function testNewExceptable(
