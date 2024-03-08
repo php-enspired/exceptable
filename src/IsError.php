@@ -20,6 +20,7 @@ declare(strict_types = 1);
 namespace at\exceptable;
 
 use BackedEnum,
+  ResourceBundle,
   Throwable;
 
 use at\exceptable\ {
@@ -77,9 +78,9 @@ trait isError {
   public function message(array $context) : string {
     assert($this instanceof Error);
 
-    $error = static::class . ".{$this->name}";
-    $message = $this->makeMessage(static::class . ".{$this->name}", $context);
-    return empty($message) ?
+    $error = $this->messageKey();
+    $message = $this->makeMessage($error, $context);
+    return (empty($message) || $this->isDefaultFormat($message)) ?
       $error :
       "{$error}: {$message}";
   }
@@ -113,5 +114,40 @@ trait isError {
     })->call($x, $x);
 
     return $x;
+  }
+
+  /**
+   * Is the given message identical to the default message format string, and does it include formatting tokens
+   *  (i.e., were replacements expected but none were actually made)?
+   *
+   * @param string $message The message to inspect
+   * @return bool True if the message is identical to the default format string; false otherwise
+   */
+  private function isDefaultFormat(string $message) : bool {
+    if (preg_match("(\{.*\})", $message) < 1) {
+      return false;
+    }
+
+    $defaultMessage = static::messageBundle();
+    foreach (explode(".", $this->messageKey()) as $next) {
+      if (! $defaultMessage instanceof ResourceBundle) {
+        return false;
+      }
+
+      $defaultMessage = $defaultMessage->get($next);
+    }
+
+    return $message === $defaultMessage;
+  }
+
+  /**
+   * Gets a key to look up this Error's message.
+   *
+   * @return string @see MessageRegistry::messageFrom() $key
+   */
+  private function messageKey() : string {
+    assert($this instanceof Error);
+
+    return static::class . ".{$this->name}";
   }
 }

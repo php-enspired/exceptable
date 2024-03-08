@@ -45,6 +45,11 @@ class ExceptableErrorTest extends ErrorTestCase {
     return [
       [
         ExceptableError::UnknownError,
+        [],
+        "at\\exceptable\\ExceptableError.UnknownError"
+      ],
+      [
+        ExceptableError::UnknownError,
         ["__rootMessage__" => "hello, world"],
         "at\\exceptable\\ExceptableError.UnknownError: hello, world"
       ],
