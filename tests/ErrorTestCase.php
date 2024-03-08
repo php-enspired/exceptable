@@ -64,17 +64,20 @@ abstract class ErrorTestCase extends TestCase {
     ? Throwable $previous,
     Exceptable $expected
   ) {
-    $line = __LINE__ + 1;
-    $actual = $error($context, $previous);
+    // we're testing both __invoke() and newExceptable() - both should behave identically
+    foreach ([$error, $error->newExceptable(...)] as $method) {
+      $line = __LINE__ + 1;
+      $actual = $method($context, $previous);
 
-    $this->assertExceptableIsExceptable($actual, get_class($expected));
-    $this->assertExceptableOrigination($actual, __FILE__, $line);
-    $this->assertExceptableHasCode($actual, $expected->getCode());
-    $this->assertExceptableHasMessage($actual, $expected->getMessage());
-    $this->assertExceptableHasError($actual, $error);
-    $this->assertExceptableHasContext($actual, $expected->context());
-    $this->assertExceptableHasPrevious($actual, $expected->getPrevious());
-    $this->assertExceptableHasRoot($actual, $expected->getPrevious() ?? $actual);
+      $this->assertExceptableIsExceptable($actual, get_class($expected));
+      $this->assertExceptableOrigination($actual, __FILE__, $line);
+      $this->assertExceptableHasCode($actual, $expected->getCode());
+      $this->assertExceptableHasMessage($actual, $expected->getMessage());
+      $this->assertExceptableHasError($actual, $error);
+      $this->assertExceptableHasContext($actual, $expected->context());
+      $this->assertExceptableHasPrevious($actual, $expected->getPrevious());
+      $this->assertExceptableHasRoot($actual, $expected->getPrevious() ?? $actual);
+    }
   }
 
   /**
