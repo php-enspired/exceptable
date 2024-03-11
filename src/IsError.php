@@ -69,16 +69,29 @@ trait isError {
     }
   }
 
+  /**
+   * Gets the full human-readable name for this Error.
+   *
+   * This is expected to be usable as the message $key.
+   *
+   * @return string Error class and name
+   */
+  final public function errorName() : string {
+    assert($this instanceof Error);
+
+    return static::class . ".{$this->name}";
+  }
+
   /** @see Error::exceptableType() */
   public function exceptableType() : string {
     return RuntimeException::class;
   }
 
   /** @see Error::message() */
-  public function message(array $context) : string {
+  public function message(array $context = []) : string {
     assert($this instanceof Error);
 
-    $error = $this->messageKey();
+    $error = $this->errorName();
     $message = $this->makeMessage($error, $context);
     return (empty($message) || $this->isDefaultFormat($message)) ?
       $error :
@@ -129,7 +142,7 @@ trait isError {
     }
 
     $defaultMessage = static::messageBundle();
-    foreach (explode(".", $this->messageKey()) as $next) {
+    foreach (explode(".", $this->errorName()) as $next) {
       if (! $defaultMessage instanceof ResourceBundle) {
         return false;
       }
@@ -137,17 +150,6 @@ trait isError {
       $defaultMessage = $defaultMessage->get($next);
     }
 
-    return $message === $defaultMessage;
-  }
-
-  /**
-   * Gets a key to look up this Error's message.
-   *
-   * @return string @see MessageRegistry::messageFrom() $key
-   */
-  private function messageKey() : string {
-    assert($this instanceof Error);
-
-    return static::class . ".{$this->name}";
+    return $message === strtr($defaultMessage, ["''" => "'"]);
   }
 }

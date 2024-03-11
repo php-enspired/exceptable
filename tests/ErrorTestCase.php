@@ -21,7 +21,8 @@ declare(strict_types = 1);
 
 namespace at\exceptable\Tests;
 
-use Exception,
+use BackedEnum,
+  Exception,
   ResourceBundle,
   Throwable;
 
@@ -33,28 +34,82 @@ use at\exceptable\ {
 };
 
 /**
- * Basic tests for the default Error implementations.
+ * Basic tests for Error implementations.
  *
  * @covers at\exceptable\IsError
  *
- * Base class to test implementations of Error.
+ * Extend this class to test your Error.
  *  - override error() to provide the Error to test
  *  - override *Provider() methods to provide appropriate input and expectations
  */
 abstract class ErrorTestCase extends TestCase {
 
-  abstract public static function codeProvider() : array;
+  /** @return array[] @see ErrorTestCase::testExceptableType() */
+  abstract public static function exceptableTypeProvider() : array;
+
+  /** @return array[] @see ErrorTestCase::testMessage() */
   abstract public static function messageProvider() : array;
+
+  /** @return array[] @see ErrorTestCase::testNewExceptable() */
   abstract public static function newExceptableProvider() : array;
 
-  /** @dataProvider codeProvider */
-  public function testCode(Error $error, int $expected) {
+  /** @return string Fully qualified classname of Error under test. */
+  abstract protected static function errorType() : string;
+
+  public static function errorProvider() : array {
+    return array_map(
+      fn ($error) => [$error],
+      static::errorType()::cases()
+    );
+  }
+
+  /** @dataProvider errorProvider */
+  public function testCode(Error $error) {
+    if ($error instanceof BackedEnum) {
+      $expected = $error->value;
+    } else {
+      foreach ($error::cases() as $code => $case) {
+        if ($case === $error) {
+          $expected = $code + 1;
+          break;
+        }
+      }
+    }
+
     $this->assertSame($error->code(), $expected, "Error returns wrong error code");
   }
 
-  /** @dataProvider messageProvider */
-  public function testMessage(Error $error, array $context, string $expected) {
-    $this->assertSame($expected, $error->message($context), "Error returns wrong error message");
+  /** @dataProvider errorProvider */
+  public function testErrorName(Error $error) : void {
+    $expected = $error::class . ".{$error->name}";
+    $this->assertSame($expected, $error->errorName(), "Error does not report expected error name '{$expected}'");
+  }
+
+  /** @dataProvider exceptableTypeProvider */
+  public function testExceptableType(Error $error, string $expected) : void {
+    $this->assertSame($expected, $error->exceptableType());
+  }
+
+  /**
+   * @dataProvider messageProvider
+   *
+   * @param Error $error The Error instance to test
+   * @param array $context Contextual information for the message
+   * @param string $expected The expected message
+   * @param bool $isContextRequired Does omitting context result in an invalid message?
+   */
+  public function testMessage(Error $error, array $context, string $expected, bool $isContextRequired) {
+    $errorName = $error->errorName();
+
+    $this->assertSame(
+      "{$errorName}: {$expected}",
+      $error->message($context),
+      "Error does return expected message with context"
+    );
+
+    if ($isContextRequired) {
+      $this->assertSame($errorName, $error->message(), "Error does not return expected message without context");
+    }
   }
 
   /** @dataProvider newExceptableProvider */
@@ -73,31 +128,24 @@ abstract class ErrorTestCase extends TestCase {
       $this->assertExceptableOrigination($actual, __FILE__, $line);
       $this->assertExceptableHasCode($actual, $expected->getCode());
       $this->assertExceptableHasMessage($actual, $expected->getMessage());
+      $this->assertExceptableIsError($actual, $error);
       $this->assertExceptableHasError($actual, $error);
+      if ($previous instanceof Exceptable) {
+        $this->assertExceptableHasError($previous->error());
+      }
       $this->assertExceptableHasContext($actual, $expected->context());
       $this->assertExceptableHasPrevious($actual, $expected->getPrevious());
       $this->assertExceptableHasRoot($actual, $expected->getPrevious() ?? $actual);
     }
   }
 
-  /**
-   * Asserts test subject is an instance of Exceptable and of the given FQCN.
-   *
-   * @param mixed $actual Test subject
-   * @param string $fqcn Fully-qualified classname of the intended Exceptable
-   */
+  /** Asserts test subject is an instance of Exceptable and of the given FQCN. */
   protected function assertExceptableIsExceptable($actual, string $fqcn) : void {
     $this->assertInstanceOf(Exceptable::class, $actual, "Exceptable is not Exceptable");
     $this->assertInstanceOf($fqcn, $actual, "Exceptable is not an instance of {$fqcn}");
   }
 
-  /**
-   * Asserts test subject has the expected origin file and line number.
-   *
-   * @param mixed $actual Test subject
-   * @param string $file Expected filename
-   * @param int $line Expected line number
-   */
+  /** Asserts test subject has the expected origin file and line number. */
   protected function assertExceptableOrigination(Exceptable $actual, string $file, int $line) : void {
     $this->assertSame(
       $file,
@@ -111,26 +159,7 @@ abstract class ErrorTestCase extends TestCase {
     );
   }
 
-  /**
-   * Asserts test subject has the expected error case.
-   *
-   * @param mixed $actual Test subject
-   * @param Error $rttot Expected error case
-   */
-  protected function assertExceptableHasError(Exceptable $actual, Error $error) : void {
-    $this->assertSame(
-      $error,
-      $actual->error(),
-      "Exceptable does not report expected error case '{$error->name}'"
-    );
-  }
-
-  /**
-   * Asserts test subject has the expected code.
-   *
-   * @param mixed $actual Test subject
-   * @param int $code Expected exceptable code
-   */
+  /** Asserts test subject has the expected code. */
   protected function assertExceptableHasCode(Exceptable $actual, int $code) : void {
     $this->assertSame(
       $code,
@@ -139,12 +168,7 @@ abstract class ErrorTestCase extends TestCase {
     );
   }
 
-  /**
-   * Asserts test subject has the expected (possibly formatted) message.
-   *
-   * @param mixed $actual Test subject
-   * @param string #message Expected exceptable message
-   */
+  /** Asserts test subject has the expected (possibly formatted) message. */
   protected function assertExceptableHasMessage(Exceptable $actual, string $message) : void {
     $this->assertSame(
       $message,
@@ -153,12 +177,7 @@ abstract class ErrorTestCase extends TestCase {
     );
   }
 
-  /**
-   * Asserts test subject has the expected contextual information.
-   *
-   * @param mixed $actual Test subject
-   * @param ?array $context Expected contextual information
-   */
+  /** Asserts test subject has the expected contextual information. */
   protected function assertExceptableHasContext(Exceptable $actual, ? array $context) : void {
     $actual = $actual->context();
 
@@ -178,12 +197,7 @@ abstract class ErrorTestCase extends TestCase {
     }
   }
 
-  /**
-   * Asserts test subject has the expected previous Exception.
-   *
-   * @param mixed      $actual   Test subject
-   * @param ?Throwable $previous Expected previous exception
-   */
+  /** Asserts test subject has the expected previous Exception. */
   protected function assertExceptableHasPrevious(Exceptable $actual, ?Throwable $previous) : void {
     $message = isset($previous) ?
       "getPrevious() does not report expected exception (" . get_class($previous) . ")" :
@@ -191,18 +205,34 @@ abstract class ErrorTestCase extends TestCase {
     $this->assertSame($previous, $actual->getPrevious(), $message);
   }
 
-  /**
-   * Asserts test subject has the expected root Exception.
-   *
-   * @param mixed      $actual Test subject
-   * @param ?Throwable $root   Expected root (most-previous) exception
-   */
+  /** Asserts test subject has the expected root Exception. */
   protected function assertExceptableHasRoot(Exceptable $actual, Throwable $root) : void {
     $fqcn = get_class($root);
     $this->assertSame(
       $root,
       $actual->root(),
       "getPrevious() does not report expected root exception ({$fqcn})"
+    );
+  }
+
+  /** Asserts test subject has the given Error case. */
+  protected function assertExceptableHasError(Exceptable $actual, Error $error) : void {
+    $this->assertTrue(
+      $actual->has($error),
+      "Exceptable->has() does not have expected Error {$error->errorName()}"
+    );
+  }
+
+  /** Asserts test subject matches the expected Error case. */
+  protected function assertExceptableIsError(Exceptable $actual, Error $error) : void {
+    $this->assertSame(
+      $actual->error(),
+      $error,
+      "Exceptable does not match expected Error {$error->errorName()}"
+    );
+    $this->assertTrue(
+      $actual->is($error),
+      "Exceptable->is() does not match expected Error {$error->errorName()}"
     );
   }
 }

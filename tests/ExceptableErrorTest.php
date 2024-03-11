@@ -32,42 +32,35 @@ use at\exceptable\ {
 
 class ExceptableErrorTest extends ErrorTestCase {
 
-  public static function codeProvider() : array {
+  public static function exceptableTypeProvider() : array {
     return [
-      [ExceptableError::UnknownError, 0],
-      [ExceptableError::UnacceptableError, 1],
-      [ExceptableError::UncaughtException, 2],
-      [ExceptableError::HandlerFailed, 3]
+      [ExceptableError::UnknownError, RuntimeException::class],
+      [ExceptableError::UnacceptableError, LogicException::class],
+      [ExceptableError::UncaughtException, RuntimeException::class],
+      [ExceptableError::HandlerFailed, LogicException::class]
     ];
   }
 
   public static function messageProvider() : array {
     return [
-      [
-        ExceptableError::UnknownError,
-        [],
-        "at\\exceptable\\ExceptableError.UnknownError"
-      ],
-      [
-        ExceptableError::UnknownError,
-        ["__rootMessage__" => "hello, world"],
-        "at\\exceptable\\ExceptableError.UnknownError: hello, world"
-      ],
+      [ExceptableError::UnknownError, ["__rootMessage__" => "hello, world"], "hello, world", true],
       [
         ExceptableError::UnacceptableError,
         ["type" => "Foo"],
-        "at\\exceptable\\ExceptableError.UnacceptableError:" .
-          " Invalid Error type 'Foo' (expected enum implementing at\\exceptable\\Error)"
+        "Invalid Error type 'Foo' (expected enum implementing at\\exceptable\\Error)",
+        true
       ],
       [
         ExceptableError::UncaughtException,
         ["__rootType__" => "FooException", "__rootMessage__" => "hello, world"],
-        "at\\exceptable\\ExceptableError.UncaughtException: Uncaught Exception (FooException): hello, world"
+        "Uncaught Exception (FooException): hello, world",
+        true
       ],
       [
         ExceptableError::HandlerFailed,
         ["type" => "BadHandler", "__rootMessage__" => "hello, world"],
-        "at\\exceptable\\ExceptableError.HandlerFailed: ExceptionHandler (BadHandler) failed: hello, world"
+        "ExceptionHandler (BadHandler) failed: hello, world",
+        true
       ]
     ];
   }
@@ -100,5 +93,9 @@ class ExceptableErrorTest extends ErrorTestCase {
         new LogicException(ExceptableError::HandlerFailed, ["type" => "BadHandler"], $t)
       ]
     ];
+  }
+
+  protected static function errorType() : string {
+    return ExceptableError::class;
   }
 }

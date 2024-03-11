@@ -47,10 +47,10 @@ interface Error extends HasMessages, UnitEnum {
   /**
    * Gets the error message for this case, using the given context.
    *
-   * @param array $context Exception context
+   * @param ?array $context Exception context
    * @return string An error message
    */
-  public function message(array $context) : string;
+  public function message(array $context = []) : string;
 
   /**
    * Creates an Exceptable from this Error case.

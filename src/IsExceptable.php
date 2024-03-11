@@ -34,21 +34,6 @@ use at\exceptable\ {
  */
 trait IsExceptable {
 
-  /**
-   * Finds the previous-most exception from the given exception.
-   *
-   * @param Throwable $t the exception to start from
-   * @return Throwable The root exception (may be the same as the starting exception)
-   */
-  private static function findRoot(Throwable $t) : Throwable {
-    $root = $t;
-    while (($previous = $root->getPrevious()) instanceof Throwable) {
-      $root = $previous;
-    }
-
-    return $root;
-  }
-
   /** @see Exceptable::__construct() */
   public function __construct(
     protected ? Error $error = null,
@@ -122,5 +107,20 @@ trait IsExceptable {
    */
   protected function defaultError() : Error {
     return ExceptableError::UnknownError;
+  }
+
+  /**
+   * Finds the previous-most exception from the given exception.
+   *
+   * @param Throwable $t the exception to start from
+   * @return Throwable The root exception (may be the same as the starting exception)
+   */
+  private function findRoot(Throwable $t) : Throwable {
+    $root = $t;
+    while (($previous = $root->getPrevious()) instanceof Throwable) {
+      $root = $previous;
+    }
+
+    return $root;
   }
 }
