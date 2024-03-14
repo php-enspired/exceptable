@@ -41,6 +41,39 @@ class ExceptableErrorTest extends ErrorTestCase {
     ];
   }
 
+  public static function localizedMessageProvider() : array {
+    return [
+      [
+        "en_US",
+        ExceptableError::UnknownError,
+        ["__rootMessage__" => "hello, world"],
+        "hello, world",
+        true
+      ],
+      [
+        "en_US",
+        ExceptableError::UnacceptableError,
+        ["type" => "Foo"],
+        "Invalid Error type 'Foo' (expected enum implementing at\\exceptable\\Error)",
+        true
+      ],
+      [
+        "en_US",
+        ExceptableError::UncaughtException,
+        ["__rootType__" => "FooException", "__rootMessage__" => "hello, world"],
+        "Uncaught Exception (FooException): hello, world",
+        true
+      ],
+      [
+        "en_US",
+        ExceptableError::HandlerFailed,
+        ["type" => "BadHandler", "__rootMessage__" => "hello, world"],
+        "ExceptionHandler (BadHandler) failed: hello, world",
+        true
+      ]
+    ];
+  }
+
   public static function messageProvider() : array {
     return [
       [ExceptableError::UnknownError, ["__rootMessage__" => "hello, world"], "hello, world", true],

@@ -1,15 +1,23 @@
 root {
-  exceptable {
-    exceptableexception {
-      invalid_handler { "Invalid handler [{type}]: {__rootMessage__}" }
-      no_such_code { "No exception code '{code}' is known" }
-      uncaught_exception { "No registered handler caught exception: {__rootMessage__}" }
-    }
-    tests {
-      testexceptable {
-        unknownfoo { "i don't know who, you think is foo, but it's not {foo}" }
-        toomuchfoo { "too much foo is bad for you (got {count,spellout} foo)" }
-      }
-    }
+  at_exceptable_ExceptableError {
+    UnknownError { "{__rootMessage__}" }
+    UnacceptableError { "Invalid Error type ''{type}'' (expected enum implementing at\exceptable\Error)" }
+    UncaughtException { "Uncaught Exception ({__rootType__}): {__rootMessage__}" }
+    HandlerFailed { "ExceptionHandler ({type}) failed: {__rootMessage__}" }
+  }
+  at_exceptable_Spl_SplError {
+    BadFunctionCall { "{__rootMessage__}" }
+    BadMethodCall { "{__rootMessage__}" }
+    Domain { "{__rootMessage__}" }
+    InvalidArgument { "{__rootMessage__}" }
+    Length { "{__rootMessage__}" }
+    Logic { "{__rootMessage__}" }
+    OutOfBounds { "{__rootMessage__}" }
+    OutOfRange { "{__rootMessage__}" }
+    Overflow { "{__rootMessage__}" }
+    Range { "{__rootMessage__}" }
+    Runtime { "{__rootMessage__}" }
+    Underflow { "{__rootMessage__}" }
+    UnexpectedValue { "{__rootMessage__}" }
   }
 }

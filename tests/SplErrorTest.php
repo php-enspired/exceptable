@@ -71,6 +71,25 @@ class SplErrorTest extends ErrorTestCase {
     ];
   }
 
+  public static function localizedMessageProvider() : array {
+    $context = ["__rootMessage__" => "hello, world"];
+    return [
+      ["en_US", SplError::BadFunctionCall, $context, "hello, world", true],
+      ["en_US", SplError::BadMethodCall, $context, "hello, world", true],
+      ["en_US", SplError::Domain, $context, "hello, world", true],
+      ["en_US", SplError::InvalidArgument, $context, "hello, world", true],
+      ["en_US", SplError::Length, $context, "hello, world", true],
+      ["en_US", SplError::Logic, $context, "hello, world", true],
+      ["en_US", SplError::OutOfBounds, $context, "hello, world", true],
+      ["en_US", SplError::OutOfRange, $context, "hello, world", true],
+      ["en_US", SplError::Overflow, $context, "hello, world", true],
+      ["en_US", SplError::Range, $context, "hello, world", true],
+      ["en_US", SplError::Runtime, $context, "hello, world", true],
+      ["en_US", SplError::Underflow, $context, "hello, world", true],
+      ["en_US", SplError::UnexpectedValue, $context, "hello, world", true]
+    ];
+  }
+
   public static function messageProvider() : array {
     $context = ["__rootMessage__" => "hello, world"];
     return [
