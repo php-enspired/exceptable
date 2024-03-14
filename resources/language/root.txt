@@ -1,11 +1,11 @@
 root {
-  "at\exceptable\ExceptableError" {
+  at_exceptable_ExceptableError {
     UnknownError { "{__rootMessage__}" }
-    UnacceptableError { "Invalid Error type ''{type}'' (expected enum implementing at\exceptable\Error)" }
+    UnacceptableError { "Invalid Error type ''{type}'' (expected enum implementing at\\exceptable\\Error)" }
     UncaughtException { "Uncaught Exception ({__rootType__}): {__rootMessage__}" }
     HandlerFailed { "ExceptionHandler ({type}) failed: {__rootMessage__}" }
   }
-  "at\exceptable\Spl\SplError" {
+  at_exceptable_Spl_SplError {
     BadFunctionCall { "{__rootMessage__}" }
     BadMethodCall { "{__rootMessage__}" }
     Domain { "{__rootMessage__}" }

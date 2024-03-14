@@ -33,6 +33,8 @@ use at\exceptable\ {
   Tests\TestCase
 };
 
+use at\peekaboo\MessageRegistry;
+
 /**
  * Basic tests for Error implementations.
  *
@@ -46,6 +48,9 @@ abstract class ErrorTestCase extends TestCase {
 
   /** @return array[] @see ErrorTestCase::testExceptableType() */
   abstract public static function exceptableTypeProvider() : array;
+
+  /** @return array[] @see ErrorTestCase::testMessageLocalization() */
+  abstract public static function localizedMessageProvider() : array;
 
   /** @return array[] @see ErrorTestCase::testMessage() */
   abstract public static function messageProvider() : array;
@@ -110,6 +115,50 @@ abstract class ErrorTestCase extends TestCase {
     if ($isContextRequired) {
       $this->assertSame($errorName, $error->message(), "Error does not return expected message without context");
     }
+  }
+
+  /**
+   * @dataProvider localizedMessageProvider
+   *
+   * @todo This test is not actually hitting the intl bundle as expected
+   *
+   * @param string $locale The locale to use
+   * @param Error $error The Error instance to test
+   * @param array $context Contextual information for the message
+   * @param string $expected The expected message
+   * @param bool $isContextRequired Does omitting context result in an invalid message?
+   */
+  public function testMessageLocalization(
+    string $locale,
+    Error $error,
+    array $context,
+    string $expected,
+    bool $isContextRequired
+  ) {
+    if (! extension_loaded("intl")) {
+      $this->markTestSkipped();
+    }
+
+    $bundle = $this->newResourceBundle($locale);
+    MessageRegistry::register($bundle);
+
+    $errorName = $error->errorName();
+
+    $this->assertSame(
+      "{$errorName}: {$expected}",
+      $error->message($context),
+      "Error does not return expected localized message with context"
+    );
+
+    if ($isContextRequired) {
+      $this->assertSame(
+        $errorName,
+        $error->message(),
+        "Error does not return expected localized message without context"
+      );
+    }
+
+    MessageRegistry::unregister($bundle);
   }
 
   /** @dataProvider newExceptableProvider */
@@ -234,5 +283,9 @@ abstract class ErrorTestCase extends TestCase {
       $actual->is($error),
       "Exceptable->is() does not match expected Error {$error->errorName()}"
     );
+  }
+
+  protected function newResourceBundle(string $locale) : ResourceBundle {
+    return new ResourceBundle($locale, __DIR__ . "/../resources/language");
   }
 }
