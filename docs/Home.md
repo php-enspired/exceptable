@@ -60,7 +60,7 @@ docs
   - [The Exceptable Interface](https://github.com/php-enspired/exceptable/wiki/API:-The-Exceptable-Interface)
   - [The Exception Class](https://github.com/php-enspired/exceptable/wiki/API:-The-Exception-Class)
   - [The Handler Class](https://github.com/php-enspired/exceptable/wiki/API:-The-Handler-Class)
-  - [The ExceptableException Class](https://github.com/php-enspired/exceptable/wiki/API:-The-ExceptableException-Class)
+  - [The ExceptableError Class](https://github.com/php-enspired/exceptable/wiki/API:-The-ExceptableError-Class)
 - [Basic Exceptable Usage](https://github.com/php-enspired/exceptable/wiki/Usage:-Exceptables)
 - [Basic Handler Usage](https://github.com/php-enspired/exceptable/wiki/Usage:-Handlers)
 

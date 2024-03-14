@@ -3,7 +3,7 @@
  * @package    at.exceptable
  * @subpackage tests
  * @author     Adrian <adrian@enspi.red>
- * @copyright  2014 - 2020
+ * @copyright  2014 - 2023
  * @license    GPL-3.0 (only)
  *
  *  This program is free software: you can redistribute it and/or modify it
@@ -19,9 +19,9 @@
  */
 declare(strict_types = 1);
 
-namespace AT\Exceptable;
+namespace at\exceptable\Handler;
 
-use AT\Exceptable\Tests\HandlerTest;
+use at\exceptable\Tests\HandlerTest;
 
 if (! function_exists(register_shutdown_function::class)) {
   /**
@@ -29,7 +29,7 @@ if (! function_exists(register_shutdown_function::class)) {
    * @see https://php.net/register_shutdown_function
    */
   function register_shutdown_function(callable $callback, ...$args) : void {
-    HandlerTest::notify(explode("\\", __FUNCTION__)[2], $callback, $args);
+    HandlerTest::notify(explode("\\", __FUNCTION__)[3], $callback, $args);
   }
 }
 
@@ -39,7 +39,7 @@ if (! function_exists(restore_error_handler::class)) {
    * @see https://php.net/restore_error_handler
    */
   function restore_error_handler() {
-    HandlerTest::notify(explode("\\", __FUNCTION__)[2]);
+    HandlerTest::notify(explode("\\", __FUNCTION__)[3]);
     return true;
   }
 }
@@ -50,7 +50,7 @@ if (! function_exists(restore_exception_handler::class)) {
    * @see https://php.net/restore_exception_handler
    */
   function restore_exception_handler() {
-    HandlerTest::notify(explode("\\", __FUNCTION__)[2]);
+    HandlerTest::notify(explode("\\", __FUNCTION__)[3]);
     return true;
   }
 }
@@ -61,7 +61,7 @@ if (! function_exists(set_error_handler::class)) {
    * @see https://php.net/set_error_handler
    */
   function set_error_handler(callable $error_handler, int $error_types = E_ALL | E_STRICT) {
-    HandlerTest::notify(explode("\\", __FUNCTION__)[2], $error_handler, $error_types);
+    HandlerTest::notify(explode("\\", __FUNCTION__)[3], $error_handler, $error_types);
     return null;
   }
 }
@@ -72,7 +72,7 @@ if (! function_exists(set_exception_handler::class)) {
    * @see https://php.net/set_exception_handler
    */
   function set_exception_handler(callable $exception_handler) {
-    HandlerTest::notify(explode("\\", __FUNCTION__)[2], $exception_handler);
+    HandlerTest::notify(explode("\\", __FUNCTION__)[3], $exception_handler);
     return null;
   }
 }

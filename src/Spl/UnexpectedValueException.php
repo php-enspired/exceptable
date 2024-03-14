@@ -2,7 +2,7 @@
 /**
  * @package    at.exceptable
  * @author     Adrian <adrian@enspi.red>
- * @copyright  2014 - 2020
+ * @copyright  2014 - 2024
  * @license    GPL-3.0 (only)
  *
  *  This program is free software: you can redistribute it and/or modify it
@@ -18,13 +18,14 @@
  */
 declare(strict_types = 1);
 
-namespace AT\Exceptable\Spl;
+namespace at\exceptable\Spl;
 
 use UnexpectedValueException as SplUnexpectedValueException;
 
-use AT\Exceptable\ {
+use at\exceptable\ {
   Exceptable,
-  IsExceptable
+  IsExceptable,
+  Spl\SplError
 };
 
 /**
@@ -34,15 +35,5 @@ use AT\Exceptable\ {
 class UnexpectedValueException extends SplUnexpectedValueException implements Exceptable {
   use IsExceptable;
 
-  /** @var int Unexpected value. */
-  public const UNEXPECTED_VALUE = 0;
-
-  /** @see IsExceptable::getInfo() */
-  public const INFO = [
-    self::UNEXPECTED_VALUE => [
-      "message" => "Unexpected value",
-      "formatKey" => "exceptable.spl.unexpectedvalue",
-      "format" => "Unexpected value: {__rootMessage__}"
-    ]
-  ];
+  public const DEFAULT_ERROR = SplError::UnexpectedValue;
 }

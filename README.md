@@ -1,4 +1,4 @@
-![](https://img.shields.io/github/release/php-enspired/exceptable.svg)  ![](https://img.shields.io/badge/PHP-7.4-blue.svg?colorB=8892BF)  ![](https://img.shields.io/badge/PHP-8-blue.svg?colorB=8892BF)  ![](https://img.shields.io/badge/license-GPL_3.0_only-blue.svg)
+![](https://img.shields.io/github/release/php-enspired/exceptable.svg)  ![](https://img.shields.io/badge/PHP-8.2-blue.svg?colorB=8892BF)  ![](https://img.shields.io/badge/PHP-8-blue.svg?colorB=8892BF)  ![](https://img.shields.io/badge/license-GPL_3.0_only-blue.svg)
 
 how exceptable!
 ===============
@@ -10,7 +10,7 @@ Exceptables are easy to create and pass details to, they provide access to error
 dependencies
 ------------
 
-Requires php 7.4 or later.
+Requires php 8.2 or later.
 
 ICU support requires the `intl` extension.
 
@@ -24,58 +24,110 @@ a quick taste
 ```php
 <?php
 
-use AT\Exceptable\Handler;
-use AT\Exceptable\Spl\RuntimeException;
+use at\exceptable\ {
+  Error,
+  Handler\ExceptionHandler,
+  Handler\Handler,
+  IsError
+};
 
-// a simple Exceptable just for you
-class FooException extends RuntimeException {
+// a simple Error, just for you
+enum FooError : int implements Error {
+  use IsError;
 
-  const UNKNOWN_FOO = 1;
-
-  const INFO = [
-    self::UNKNOWN_FOO => [
-      'message' => 'unknown foo',
-      'format' => "i don't know who, you think is foo, but it's not {foo}"
-    ]
+  case UnknownFoo = 1;
+  public const MESSAGES = [
+    self::UnknownFoo->name => "i don't know who, you think is foo, but it's not {foo}"
   ];
 }
 
-throw new FooException(FooException::UNKNOWN_FOO);
+(FooError::UnknownFoo)(["foo" => "foobedobedoo"]);
 // on your screen:
-// Fatal error: Uncaught FooException: unknown foo in ...
+// Fatal error: Uncaught at\exceptable\Spl\RuntimeException: i don't know who, you think is foo, but it's not foobedobedoo
 
 $handler = new Handler();
-$handler
-  ->onException(function($e) { error_log($e->getMessage()); return true; })
-  ->register();
+$handler->onException(new class() implements ExceptionHandler {
+    public function run(Throwable $t) {
+      error_log($t->getMessage());
+      return true;
+    }
+  });
+$handler->register();
 
-$context = ['foo' => 'foobedobedoo'];
-throw new FooException(FooException::UNKNOWN_FOO, $context);
+(FooError::UnknownFoo)(["foo" => "foobedobedoo"]);
 // in your error log:
 // i don't know who, you think is foo, but it's not foobedobedoo
 ```
 
+errors as values
+----------------
+
+Having errors available to your application as normal values also makes _not_ throwing exceptions a viable solution. The _Result pattern_, for example, is a functional programming approach to error handling that treats error conditions as normal, expected return values. This can encourage you to consider how to handle error cases more carefully and closer to their source, as well as being a benefit to static analysis and comprehensibility in general. See [Larry Garfield's excellent article](https://peakd.com/hive-168588/@crell/much-ado-about-null) for more.
+
+```php
+<?php
+
+use at\exceptable\ {
+  Error,
+  IsError
+};
+
+enum FooError : int implements Error {
+  use IsError;
+
+  case TheyToldMeToDoIt = 1;
+  public const MESSAGES = [
+    self::TheyToldMeToDoIt->name => "ooh noooooooooooooooooo!"
+  ];
+}
+
+function foo(bool $fail) : string|FooError {
+  return $fail ?
+    FooError::TheyToldMeToDoIt :
+    "woooooooooooooooooo hoo!";
+}
+
+$bool = maybeTrueMaybeFalse();
+$result = foo($bool);
+if ($result instanceof FooError) {
+  echo $result->message();
+  // outputs "ooh noooooooooooooooooo!"
+
+  $bool = ! $bool;
+  $result = foo($bool);
+}
+
+echo $result;
+// outputs "woooooooooooooooooo hoo!"
+```
+...and if you want to make _everybody_ mad, you can still throw them.
+```php
+throw $result(["yes" => "i know i'm horrible"]);
+```
+
 see more in [the wiki](https://github.com/php-enspired/exceptable/wiki).
 
-Version 4.0 is here!
---------------------
+Version 5.0
+-----------
+
+**Version 5** requires PHP 8.2 or greater.
+- ICU messaging system overhauled and published to its own package!
+  Check out [php-enspired/peekaboo](https://packagist.org/packages/php-enspired/peekaboo) - using _exceptable_ means you get it for free, so take advantage!
+- Introduces the _Error_ interface for enums, making errors into first-class citizens and opening up the ability to handle errors as values.
+  Adds an `SplError` enum for php's built-in exception types.
+- Reworks and improves functionality for Exceptables and the Handler.
+  Error / Exception / Shutdown Handlers now have explicit interfaces, as do debug log entries.
+
+[Read the release notes.](https://github.com/php-enspired/exceptable/wiki/new-in-5.0)
+
+Version 4.0
+-----------
 
 **Version 4.0** requires PHP 7.4 or greater.
-- PHP 7.4 added typehints to some Throwable properties, which required changes to the `IsExceptable` trait. This means _Exceptable_ can no longer support PHP 7.3 or earlier - though that's fine, right? You've already upgraded your application to 8+ anyway, right?
+- PHP 7.4 added typehints to some Throwable properties, which required changes to the `IsExceptable` trait.
+  This means _Exceptable_ can no longer support PHP 7.3 or earlier - though that's fine, right?
+  You've already upgraded your application to 8+ anyway, right?
 - right?
-
-Version 3.0 is here!
---------------------
-
-**Version 3.0** requires PHP 7.3 or greater and introduces some exciting changes from version 2:
-- Support* for ICU locales, message formats, and resource bundles!\
-  \* _requires the intl extension._
-- Ready-to-extend (or just use) `Exceptable` classes based on the built-in SPL Exception classes!
-- The generic `Exceptable` Exception base class has been removed.
-- Introduces a "debug mode" for Handlers!
-- Handlers are now Logger (e.g., Monolog)-aware!
-
-[Read more about the 3.0 release](https://github.com/php-enspired/exceptable/wiki/new-in-3.0).
 
 docs
 ----

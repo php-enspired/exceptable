@@ -18,22 +18,21 @@
  */
 declare(strict_types = 1);
 
-namespace at\exceptable\Spl;
+namespace at\exceptable\Handler;
 
-use OverflowException as SplOverflowException;
+use at\exceptable\Handler\LogEntry;
 
-use at\exceptable\ {
-  Exceptable,
-  IsExceptable,
-  Spl\SplError
-};
+/** Log entry for errors. */
+class ErrorLogEntry extends LogEntry {
 
-/**
- * Exceptable implementation of Spl's OverflowException.
- * @see https://php.net/OverflowException
- */
-class OverflowException extends SplOverflowException implements Exceptable {
-  use IsExceptable;
+  /** @var bool Was this error suppressed by the error control operator? */
+  public bool $controlled;
 
-  public const DEFAULT_ERROR = SplError::Overflow;
+  /** @var ?array[] Stack trace. */
+  public ? array $trace = null;
+
+  public function __construct(array $details) {
+    parent::__construct($details);
+    $this->controlled = error_reporting() === 0;
+  }
 }

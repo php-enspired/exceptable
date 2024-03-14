@@ -18,22 +18,18 @@
  */
 declare(strict_types = 1);
 
-namespace at\exceptable\Spl;
+namespace at\exceptable\Handler;
 
-use OverflowException as SplOverflowException;
+use Throwable;
 
-use at\exceptable\ {
-  Exceptable,
-  IsExceptable,
-  Spl\SplError
-};
+/** Interface for use with Handler->onException(). */
+interface ExceptionHandler {
 
-/**
- * Exceptable implementation of Spl's OverflowException.
- * @see https://php.net/OverflowException
- */
-class OverflowException extends SplOverflowException implements Exceptable {
-  use IsExceptable;
-
-  public const DEFAULT_ERROR = SplError::Overflow;
+  /**
+   * Invoked by a registered Handler when an exception goes uncaught.
+   *
+   * @param Throwable $t The uncaught exception
+   * @return bool True if exception handled successfully; false otherwise
+   */
+  public function run(Throwable $t) : bool;
 }

@@ -18,22 +18,14 @@
  */
 declare(strict_types = 1);
 
-namespace at\exceptable\Spl;
+namespace at\exceptable\Handler;
 
-use OverflowException as SplOverflowException;
+/** Interface for use with Handler->onShutdown(). */
+interface ShutdownHandler {
 
-use at\exceptable\ {
-  Exceptable,
-  IsExceptable,
-  Spl\SplError
-};
-
-/**
- * Exceptable implementation of Spl's OverflowException.
- * @see https://php.net/OverflowException
- */
-class OverflowException extends SplOverflowException implements Exceptable {
-  use IsExceptable;
-
-  public const DEFAULT_ERROR = SplError::Overflow;
+  /**
+   * Invoked by registered exceptable Handlers on php shutdown.
+   * Calling `exit;` from within this method will prevent further shutdown handlers from running.
+   */
+  public function run() : void;
 }

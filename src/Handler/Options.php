@@ -18,22 +18,17 @@
  */
 declare(strict_types = 1);
 
-namespace at\exceptable\Spl;
+namespace at\exceptable\Handler;
 
-use OverflowException as SplOverflowException;
+/** Options for the Handler class. */
+class Options {
 
-use at\exceptable\ {
-  Exceptable,
-  IsExceptable,
-  Spl\SplError
-};
+  /** @var bool Debug mode? */
+  public bool $debug = false;
 
-/**
- * Exceptable implementation of Spl's OverflowException.
- * @see https://php.net/OverflowException
- */
-class OverflowException extends SplOverflowException implements Exceptable {
-  use IsExceptable;
+  /** @var bool Ignore the error control operator? */
+  public bool $scream = false;
 
-  public const DEFAULT_ERROR = SplError::Overflow;
+  /** @var int Error types which should be thrown as ErrorExceptions. */
+  public int $throw = 0;
 }

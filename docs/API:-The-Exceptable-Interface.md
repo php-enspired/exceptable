@@ -17,7 +17,7 @@ parameters:
 - int **`$code`**
   The exceptable code to look up
 
-**throws** `at\exceptable\ExceptableException` if the code is not known to the implementation.
+**throws** `at\exceptable\ExceptableError` if the code is not known to the implementation.
 
 **returns** an array with info about the code, including (at a minimum) its `"code"` and `"message"`.
 
@@ -70,7 +70,7 @@ parameters:
 - Throwable **`$previous`**
   The previous Exception, if any.
 
-**throws** `at\exceptable\ExceptableException` if the given code is invalid.
+**throws** `at\exceptable\ExceptableError` if the given code is invalid.
 
 **returns** a new Exceptable instance on success.
 
@@ -93,7 +93,7 @@ parameters:
 
 **throws** `at\exceptable\Exceptable` on success.
 
-**throws** `at\exceptable\ExceptableException` if the given code is invalid.
+**throws** `at\exceptable\ExceptableError` if the given code is invalid.
 
 ---
 
@@ -117,7 +117,7 @@ parameters:
 - Throwable **`$previous`**
   The previous Exception, if any.
 
-**throws** `at\exceptable\ExceptableException` if the given code is invalid.
+**throws** `at\exceptable\ExceptableError` if the given code is invalid.
 
 ---
 

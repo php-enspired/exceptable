@@ -18,22 +18,30 @@
  */
 declare(strict_types = 1);
 
-namespace at\exceptable\Spl;
+namespace at\exceptable\Handler;
 
-use OverflowException as SplOverflowException;
+use Throwable;
 
 use at\exceptable\ {
+  Error,
   Exceptable,
-  IsExceptable,
-  Spl\SplError
+  Handler\LogEntry
 };
 
-/**
- * Exceptable implementation of Spl's OverflowException.
- * @see https://php.net/OverflowException
- */
-class OverflowException extends SplOverflowException implements Exceptable {
-  use IsExceptable;
+/** Log entry for exceptions. */
+class ExceptionLogEntry extends LogEntry {
 
-  public const DEFAULT_ERROR = SplError::Overflow;
+  /** @var ?Error The Error case used by the exception, if any. */
+  public ? Error $error = null;
+
+  public function __construct(
+    /** @var Throwable The exception that was logged. */
+    public Throwable $exception
+  ) {
+    parent::__construct();
+
+    if ($exception instanceof Exceptable) {
+      $this->error = $exception->error();
+    }
+  }
 }
