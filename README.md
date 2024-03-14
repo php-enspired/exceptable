@@ -26,7 +26,8 @@ a quick taste
 
 use at\exceptable\ {
   Error,
-  Handler,
+  Handler\ExceptionHandler,
+  Handler\Handler,
   IsError
 };
 
@@ -45,8 +46,13 @@ enum FooError : int implements Error {
 // Fatal error: Uncaught at\exceptable\Spl\RuntimeException: i don't know who, you think is foo, but it's not foobedobedoo
 
 $handler = new Handler();
-$handler->onException(function($e) { error_log($e->getMessage()); return true; })
-  ->register();
+$handler->onException(new class() implements ExceptionHandler {
+    public function run(Throwable $t) {
+      error_log($t->getMessage());
+      return true;
+    }
+  });
+$handler->register();
 
 (FooError::UnknownFoo)(["foo" => "foobedobedoo"]);
 // in your error log:
@@ -56,7 +62,7 @@ $handler->onException(function($e) { error_log($e->getMessage()); return true; }
 errors as values
 ----------------
 
-Having errors available to your application as normal values also makes _not_ throwing exceptions a viable solution. The _Result pattern_, for example, is a functional programming approach to error handling that treats error conditions as normal, expected return values. This can encourage you to consider how to handle error cases more carefully and closer to the source, as well as being a benefit to static analysis and comprehensibility in general. See [Larry Garfield's excellent article](https://peakd.com/hive-168588/@crell/much-ado-about-null) for more.
+Having errors available to your application as normal values also makes _not_ throwing exceptions a viable solution. The _Result pattern_, for example, is a functional programming approach to error handling that treats error conditions as normal, expected return values. This can encourage you to consider how to handle error cases more carefully and closer to their source, as well as being a benefit to static analysis and comprehensibility in general. See [Larry Garfield's excellent article](https://peakd.com/hive-168588/@crell/much-ado-about-null) for more.
 
 ```php
 <?php
@@ -87,11 +93,11 @@ if ($result instanceof FooError) {
   echo $result->message();
   // outputs "ooh noooooooooooooooooo!"
 
-  $bool = !! $bool;
-  $newResult = foo($bool);
+  $bool = ! $bool;
+  $result = foo($bool);
 }
 
-echo $newResult;
+echo $result;
 // outputs "woooooooooooooooooo hoo!"
 ```
 ...and if you want to make _everybody_ mad, you can still throw them.
@@ -108,7 +114,9 @@ Version 5.0
 - ICU messaging system overhauled and published to its own package!
   Check out [php-enspired/peekaboo](https://packagist.org/packages/php-enspired/peekaboo) - using _exceptable_ means you get it for free, so take advantage!
 - Introduces the _Error_ interface for enums, making errors into first-class citizens and opening up the ability to handle errors as values.
+  Adds an `SplError` enum for php's built-in exception types.
 - Reworks and improves functionality for Exceptables and the Handler.
+  Error / Exception / Shutdown Handlers now have explicit interfaces, as do debug log entries.
 
 [Read the release notes.](https://github.com/php-enspired/exceptable/wiki/new-in-5.0)
 

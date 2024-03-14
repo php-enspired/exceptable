@@ -21,7 +21,8 @@ declare(strict_types = 1);
 
 namespace at\exceptable\Tests;
 
-use ErrorException,
+use Closure,
+  ErrorException,
   Exception,
   ResourceBundle,
   Throwable;
@@ -29,7 +30,9 @@ use ErrorException,
 use at\exceptable\ {
   Exceptable,
   ExceptableError,
-  Handler,
+  Handler\ExceptionHandler,
+  Handler\Handler,
+  Handler\Options,
   IsExceptable,
   Tests\TestCase
 };
@@ -51,7 +54,7 @@ use Psr\Log\ {
  *
  * @covers at\exceptable\Handler
  */
-abstract class HandlerTest extends TestCase {
+class HandlerTest extends TestCase {
 
   /** @var array[] List of reported error handling function invocations. */
   protected static $registered = [];
@@ -83,38 +86,38 @@ abstract class HandlerTest extends TestCase {
   }
 
   public function testDebugModeDisabledByDefault() : void {
-    $handler = new Handler();
+    $handler = new Handler(new Options());
     $handler->onException($this->exceptionHandler(true));
 
     $handler->try($this->throwCallback(new Exception("should not be logged")));
-    $off = $handler->getDebugLog();
-    $this->assertIsArray($off, "getDebugLog() did not return an array");
+    $off = $handler->debugLog();
+    $this->assertIsArray($off, "debugLog() did not return an array");
     $this->assertEmpty($off, "debug mode logged items by default");
   }
 
   public function testDebugModeLogsWhenEnabled() : void {
-    $handler = new Handler();
+    $handler = new Handler(new Options());
     $handler->onException($this->exceptionHandler(true));
 
-    $handler->debug();
+    $handler->options->debug = true;
     $e = new Exception("should be logged");
     $handler->try($this->throwCallback($e));
     $this->assertExceptionLogged($handler, 0, $e, true);
   }
 
   public function testDebugModeStopsLoggingWhenDisabled() : void {
-    $handler = new Handler();
+    $handler = new Handler(new Options());
     $handler->onException($this->exceptionHandler(true));
 
-    $handler->debug(true);
-    $handler->debug(false);
+    $handler->options->debug = true;
+    $handler->options->debug = false;
     $handler->try($this->throwCallback(new Exception("should not be logged")));
-    $this->assertEmpty($handler->getDebugLog(), "debug mode logged items after disabled");
+    $this->assertEmpty($handler->debugLog(), "debug mode logged items after disabled");
   }
 
   public function testHandleException() : void {
     $e = new Exception("should be handled in the end");
-    (new Handler())
+    (new Handler(new Options()))
       ->onException($this->exceptionHandler(false))
       ->onException($this->exceptionHandler(true), Mismatched::class)
       ->onException($this->exceptionHandler(true))
@@ -127,18 +130,18 @@ abstract class HandlerTest extends TestCase {
   public function testHandleExceptionFailure() : void {
     $e = new Exception("this one slips through");
     $this->expectThrowable(
-      new ExceptableError(ExceptableError::UNCAUGHT_EXCEPTION, [], $e),
+      (ExceptableError::UncaughtException)([], $e),
       self::EXPECT_THROWABLE_CODE | self::EXPECT_THROWABLE_MESSAGE
     );
 
-    $h = (new Handler())
+    $h = (new Handler(new Options()))
       ->onException($this->exceptionHandler(false))
       ->onException($this->exceptionHandler(true), Mismatched::class)
       ->handleException($e);
   }
 
   public function testLogsError() : void {
-    $handler = new Handler();
+    $handler = new Handler(new Options());
 
     $logger = new TestLogger();
     $handler->setLogger($logger);
@@ -154,11 +157,11 @@ abstract class HandlerTest extends TestCase {
   }
 
   public function testLogsDebugError() : void {
-    $handler = new Handler();
+    $handler = new Handler(new Options());
 
     $logger = new TestLogger();
     $handler->setLogger($logger);
-    $handler->debug();
+    $handler->options->debug = true;
 
     $code = E_WARNING;
     $message = "Warning: example";
@@ -180,7 +183,7 @@ abstract class HandlerTest extends TestCase {
   }
 
   public function testRegister() : void {
-    $handler = (new Handler())->register();
+    $handler = (new Handler(new Options()))->register();
 
     $this->assertTrue(
       $this->getNonpublicProperty($handler, "registered"),
@@ -195,8 +198,8 @@ abstract class HandlerTest extends TestCase {
       $registered,
       "set_error_handler() was not invoked"
     );
-    $this->assertSame(
-      [$handler, "handleError"],
+    $this->assertEquals(
+      $handler->handleError(...),
       $registered["set_error_handler"][1][0],
       "register() did not register Handler->handleError()"
     );
@@ -211,8 +214,8 @@ abstract class HandlerTest extends TestCase {
       $registered,
       "set_exception_handler() was not invoked"
     );
-    $this->assertSame(
-      [$handler, "handleException"],
+    $this->assertEquals(
+      $handler->handleException(...),
       $registered["set_exception_handler"][1][0],
       "register() did not register Handler->handleException()"
     );
@@ -222,8 +225,8 @@ abstract class HandlerTest extends TestCase {
       $registered,
       "register_shutdown_function() was not invoked"
     );
-    $this->assertSame(
-      [$handler, "handleShutdown"],
+    $this->assertEquals(
+      $handler->handleShutdown(...),
       $registered["register_shutdown_function"][1][0],
       "register() did not register Handler->handleShutdown()"
     );
@@ -235,14 +238,14 @@ abstract class HandlerTest extends TestCase {
 
   public function testTryCallback() : void {
     $e = new Exception("should be handled");
-    (new Handler())->onException($this->exceptionHandler(true))
+    (new Handler(new Options()))->onException($this->exceptionHandler(true))
       ->try($this->throwCallback($e));
 
     $this->assertExceptionHandled(0, $e, true);
   }
 
   public function testUnregister() : void {
-    $handler = (new Handler())->register();
+    $handler = (new Handler(new Options()))->register();
     // clear registry
     self::$registered = [];
     $handler->unregister();
@@ -326,7 +329,7 @@ abstract class HandlerTest extends TestCase {
     array $error,
     bool $success
   ) : void {
-    $log = $handler->getDebugLog();
+    $log = $handler->debugLog();
     $this->assertIsArray($log);
     $this->assertArrayHasKey($i);
     $logItem = $log[$i];
@@ -402,26 +405,18 @@ abstract class HandlerTest extends TestCase {
     Throwable $e,
     bool $success
   ) : void {
-    $log = $handler->getDebugLog();
-    $this->assertArrayHasKey($i, $log, "no item [{$i}] was logged");
+    $log = $handler->debugLog();
+    $this->assertArrayHasKey($i, $log, "no LogEntry [{$i}] was logged");
     $logItem = $log[$i];
 
-    $this->assertArrayHasKey("time", $logItem, "[time] is missing");
-    $this->assertIsFloat($logItem["time"], "[time] did not log as microtime");
-
-    $this->assertArrayHasKey("type", $logItem, "[type] is missing");
-    $this->assertSame("exception", $logItem["type"], "[type] was not logged as 'exception'");
-
-    $this->assertArrayHasKey("handled", $logItem, "[handled] is missing");
+    $this->assertIsFloat($logItem->time, "LogEntry->time did not log as microtime");
     $success ?
-      $this->assertTrue($logItem["handled"], "[handled] was not logged as true") :
-      $this->assertFalse($logItem["handled"], "[handled] was not logged as false");
-
-    $this->assertArrayHasKey("exception", $logItem, "[exception] is missing");
+      $this->assertTrue($logItem->handled, "LogEntry->handled was not logged as true") :
+      $this->assertFalse($logItem->handled, "LogEntry->handled was not logged as false");
     $this->assertSame(
       $e,
-      $logItem["exception"],
-      "[exception] did not log expected exception '{$this->asString($e)}'"
+      $logItem->exception,
+      "LogEntry->exception did not log expected exception '{$this->asString($e)}'"
     );
   }
 
@@ -442,12 +437,18 @@ abstract class HandlerTest extends TestCase {
    * Makes an exception handler and logs usage.
    *
    * @param bool $success Should handler succeed?
-   * @return callable
+   * @return ExceptionHandler
    */
-  protected function exceptionHandler(bool $success) : callable {
-    return function (Throwable $e) use ($success) {
-      $this->stack[] = [$e, $success];
+  protected function exceptionHandler(bool $success) : ExceptionHandler {
+    $callback = function (Throwable $t) use ($success) : bool {
+      $this->stack[] = [$t, $success];
       return $success;
+    };
+    return new class($callback) implements ExceptionHandler {
+      public function __construct(protected Closure $callback) {}
+      public function run(Throwable $t) : bool {
+        return ($this->callback)($t);
+      }
     };
   }
 

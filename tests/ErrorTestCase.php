@@ -104,7 +104,7 @@ abstract class ErrorTestCase extends TestCase {
     $this->assertSame(
       "{$errorName}: {$expected}",
       $error->message($context),
-      "Error does return expected message with context"
+      "Error does not return expected message with context"
     );
 
     if ($isContextRequired) {
