@@ -41,13 +41,11 @@ enum ExceptableError : int implements Error {
 
   /** @see MakesMessages::MESSAGES */
   public const MESSAGES = [
-    self::class => [
-      self::UnknownError->name => "{__rootMessage__}",
-      self::UnacceptableError->name =>
-        "Invalid Error type ''{type}'' (expected enum implementing " . Error::class . ")",
-      self::UncaughtException->name => "Uncaught Exception ({__rootType__}): {__rootMessage__}",
-      self::HandlerFailed->name => "ExceptionHandler ({type}) failed: {__rootMessage__}"
-    ]
+    self::UnknownError->name => "{__rootMessage__}",
+    self::UnacceptableError->name =>
+      "Invalid Error type ''{type}'' (expected enum implementing " . Error::class . ")",
+    self::UncaughtException->name => "Uncaught Exception ({__rootType__}): {__rootMessage__}",
+    self::HandlerFailed->name => "ExceptionHandler ({type}) failed: {__rootMessage__}"
   ];
 
   /** @see Error::exceptable() */

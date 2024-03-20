@@ -29,7 +29,10 @@ use at\exceptable\ {
   Spl\RuntimeException
 };
 
-use at\peekaboo\MakesMessages;
+use at\peekaboo\ {
+  MakesMessages,
+  MessageBundle
+};
 
 /**
  * Defines error cases for an Exceptable.
@@ -38,10 +41,17 @@ use at\peekaboo\MakesMessages;
  * Otherwise, error codes will be determined by the case's declaration order.
  *
  * Implementing Enums may define MESSAGES to provide default message templates.
+ * Defined messages will be wrapped in an array indexed with the Error classname,
+ *  using underscores instead of backslashes.
  * Otherwise, messages will be built using the Error class and case name.
  */
 trait isError {
   use MakesMessages;
+
+  /** @see MakeMessages::messageBundle() */
+  public static function messageBundle() : ResourceBundle {
+    return new MessageBundle([strtr(static::class, ["\\" => "_"]) => static::MESSAGES]);
+  }
 
   /** @see Error::throw() */
   public function __invoke(array $context = [], Throwable $previous = null) : Exceptable {
@@ -92,7 +102,7 @@ trait isError {
     assert($this instanceof Error);
 
     $error = $this->errorName();
-    $message = $this->makeMessage($error, $context);
+    $message = $this->makeMessage(strtr($error, ["\\", "_"]), $context);
     return (empty($message) || $this->isDefaultFormat($message)) ?
       $error :
       "{$error}: {$message}";

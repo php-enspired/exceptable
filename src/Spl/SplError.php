@@ -62,21 +62,19 @@ enum SplError : int implements Error {
 
   /** @see Error::MESSAGES */
   public const MESSAGES = [
-    self::class => [
-      self::BadFunctionCall->name => "{__rootMessage__}",
-      self::BadMethodCall->name => "{__rootMessage__}",
-      self::Domain->name => "{__rootMessage__}",
-      self::InvalidArgument->name => "{__rootMessage__}",
-      self::Length->name => "{__rootMessage__}",
-      self::Logic->name => "{__rootMessage__}",
-      self::OutOfBounds->name => "{__rootMessage__}",
-      self::OutOfRange->name => "{__rootMessage__}",
-      self::Overflow->name => "{__rootMessage__}",
-      self::Range->name => "{__rootMessage__}",
-      self::Runtime->name => "{__rootMessage__}",
-      self::Underflow->name => "{__rootMessage__}",
-      self::UnexpectedValue->name => "{__rootMessage__}"
-    ]
+    self::BadFunctionCall->name => "{__rootMessage__}",
+    self::BadMethodCall->name => "{__rootMessage__}",
+    self::Domain->name => "{__rootMessage__}",
+    self::InvalidArgument->name => "{__rootMessage__}",
+    self::Length->name => "{__rootMessage__}",
+    self::Logic->name => "{__rootMessage__}",
+    self::OutOfBounds->name => "{__rootMessage__}",
+    self::OutOfRange->name => "{__rootMessage__}",
+    self::Overflow->name => "{__rootMessage__}",
+    self::Range->name => "{__rootMessage__}",
+    self::Runtime->name => "{__rootMessage__}",
+    self::Underflow->name => "{__rootMessage__}",
+    self::UnexpectedValue->name => "{__rootMessage__}"
   ];
 
   /** @see Error::exceptable() */
