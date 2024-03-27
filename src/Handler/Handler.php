@@ -44,6 +44,54 @@ use Psr\Log\ {
 
 class Handler implements LoggerAware {
 
+  /**
+   * Builds an ErrorHandler from the given anonymous function.
+   *
+   * @param Closure $handler @see Errorhandler::run()
+   * @throws ExceptableException ExceptableError::InvalidCallback if given $handler cannot be used
+   * @return ErrorHandler
+   */
+  public static function forError(Closure $handler) : ErrorHandler {
+    return new class($handler) extends ErrorHandler {
+      public function __construct(protected Closure $handler) {}
+      public function run(int $c, string $m, string $f, int $l) : bool {
+        return ($this->handler)($c, $m, $f, $l);
+      }
+    };
+  }
+
+  /**
+   * Builds an ExceptionHandler from the given anonymous function.
+   *
+   * @param Closure $handler @see ExceptionHandler::run()
+   * @throws ExceptableException ExceptableError::InvalidCallback if given $handler cannot be used
+   * @return ExceptionHandler
+   */
+  public static function forException(Closure $handler) : ExceptionHandler {
+    return new class($handler) extends ExceptionHandler {
+      public function __construct(protected Closure $handler) {}
+      public function run(Throwable $t) : bool {
+        return ($this->handler)($t);
+      }
+    };
+  }
+
+  /**
+   * Builds a ShutdownHandler from the given anonymous function.
+   *
+   * @param Closure $handler @see ShutdownHandler::run()
+   * @throws ExceptableException ExceptableError::InvalidCallback if given $handler cannot be used
+   * @return ShutdownHandler
+   */
+  public static function forShutdown(Closure $handler) : ShutdownHandler {
+    return new class($handler) extends ShutdownHandler {
+      public function __construct(protected Closure $handler) {}
+      public function run() : void {
+        ($this->handler)();
+      }
+    };
+  }
+
   /** @var ErrorHandler[][] Registered error handlers, grouped by error type(s) to handle. */
   protected array $errorHandlers = [];
 

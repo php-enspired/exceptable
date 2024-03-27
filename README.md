@@ -62,7 +62,7 @@ $handler->register();
 errors as values
 ----------------
 
-Having errors available to your application as normal values also makes _not_ throwing exceptions a viable solution. The _Result pattern_, for example, is a functional programming approach to error handling that treats error conditions as normal, expected return values. This can encourage you to consider how to handle error cases more carefully and closer to their source, as well as being a benefit to static analysis and comprehensibility in general. See [Larry Garfield's excellent article](https://peakd.com/hive-168588/@crell/much-ado-about-null) for more.
+Having errors available to your application as normal values also makes _not_ throwing exceptions a viable solution. The _result pattern_, for example, is a functional programming approach to error handling that treats error conditions as normal, expected return values. This can encourage you to consider how to handle error cases more carefully and closer to their source, as well as being a benefit to static analysis and comprehensibility in general. See [Larry Garfield's excellent article](https://peakd.com/hive-168588/@crell/much-ado-about-null#anakedresult) for more.
 
 ```php
 <?php
@@ -132,14 +132,16 @@ Version 4.0
 docs
 ----
 
-- API:
-  - [The Exceptable Interface](https://github.com/php-enspired/exceptable/wiki/API:-The-Exceptable-Interface)
-  - [SPL Exception Classes](https://github.com/php-enspired/exceptable/wiki/API:-SPL-Exception-Classes)
-  - [The Handler Class](https://github.com/php-enspired/exceptable/wiki/API:-The-Handler-Class)
-- [Basic Exceptable Usage](https://github.com/php-enspired/exceptable/wiki/Usage:-Exceptables)
-- [Basic Handler Usage](https://github.com/php-enspired/exceptable/wiki/Usage:-Handlers)
-- [Localization and Message Formatting](https://github.com/php-enspired/exceptable/wiki/Usage:-ICU)
-- [SPL Exception Classes](https://github.com/php-enspired/exceptable/wiki/Usage:-SPL-Exception-Classes)
+### Api
+- [The `Error` Interface](https://github.com/php-enspired/exceptable/wiki/API:-The-Error-Interface)
+- [The `Exceptable` Interface](https://github.com/php-enspired/exceptable/wiki/API:-The-Exceptable-Interface)
+- [The `Handler` Class](https://github.com/php-enspired/exceptable/wiki/API:-The-Handler-Class)
+### Usage
+- [Error enums](https://github.com/php-enspired/exceptable/wiki/Usage:-Error-enums)
+- [Exceptables](https://github.com/php-enspired/exceptable/wiki/Usage:-Exceptables)
+- [Spl Errors](https://github.com/php-enspired/exceptable/wiki/Usage:-SPL-Errors)
+- [Handlers](https://github.com/php-enspired/exceptable/wiki/Usage:-Handlers)
+- [Making and Testing Exceptables for Your Own Project (coming soon!)](#)
 
 contributing or getting help
 ----------------------------
