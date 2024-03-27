@@ -21,6 +21,7 @@ declare(strict_types = 1);
 namespace at\exceptable\Handler;
 
 use ErrorException,
+  SplObjectStorage as ObjectStore,
   Throwable;
 
 use at\exceptable\ {
@@ -47,6 +48,9 @@ class Handler implements LoggerAware {
   /** @var ErrorHandler[][] Registered error handlers, grouped by error type(s) to handle. */
   protected array $errorHandlers = [];
 
+  /** @var ObjectStore<Error: ExceptionHandler[]> Registered exceptable handlers, grouped by Error case. */
+  protected ObjectStore $exceptableHandlers;
+
   /** @var ExceptionHandler[][] Registered exception handlers, grouped by Throwable type and code to handle. */
   protected array $exceptionHandlers = [];
 
@@ -64,7 +68,9 @@ class Handler implements LoggerAware {
     public Options $options,
     /** @var Logger Logging mechanism. */
     protected ? Logger $logger = null
-  ) {}
+  ) {
+    $this->exceptableHandlers = new ObjectStore();
+  }
 
   /**
    * Gets a log of errors/exceptions encountered while debug mode was active.
@@ -73,31 +79,6 @@ class Handler implements LoggerAware {
    */
   public function debugLog() : array {
     return $this->log;
-  }
-
-  /**
-   * Registers this handler to invoke a callback, and then restores the previous handler(s).
-   *
-   * Note, this method only registers the Handler for the duration of the callback;
-   *  it does not try..catch (any exceptions thrown by the callback will be let go uncaught).
-   * @see Handler::try()
-   *
-   * @param callable $callback The callback to run
-   * @return mixed The value returned from the callback
-   */
-  public function handle(callable $callback) {
-    $registered = $this->registered;
-    if (! $registered) {
-      $this->register();
-    }
-
-    $value = $callback();
-
-    if (! $registered) {
-      $this->unregister();
-    }
-
-    return $value;
   }
 
   /** @see https://php.net/set_error_handler $callback */
@@ -137,6 +118,19 @@ class Handler implements LoggerAware {
   public function handleException(Throwable $t) : void {
     $type = get_class($t);
     $code = $t->getCode();
+
+    // error case
+    $x = ($t instanceof Exceptable) ? $t : (ExceptableError::UncaughtException)([], $t);
+    foreach ($this->exceptionHandlers[Error::class] as $error => $handlers) {
+      if ($x->has($error)) {
+        foreach ($handlers as $handler) {
+          if ($this->runExceptionHandler($handler, $t)) {
+            $this->logException(true, $t);
+            return;
+          }
+        }
+      }
+    }
 
     // exact type and code
     if (! empty($this->exceptionHandlers[$type][$code])) {
@@ -198,7 +192,6 @@ class Handler implements LoggerAware {
 
   /**
    * Adds an error handler.
-   * @see <http://php.net/set_error_handler> $error_handler
    *
    * @param ErrorHandler $handler The error handler to add
    * @param int $types The error type(s) to trigger this handler (bitmask of E_* constants); defaults to all
@@ -211,8 +204,25 @@ class Handler implements LoggerAware {
   }
 
   /**
+   * Adds an exception handler for Exceptables.
+   * This is the same as onException(), but matches against Error cases.
+   *
+   * @param ExceptionHandler $handler The exception handler to add
+   * @param string ...$errors Error case(s) the handler should handle
+   * @return Handler $this
+   */
+  public function onExceptable(ExceptionHandler $handler, Error ...$errors) : Handler {
+    foreach ($errors as $error) {
+      // false positive (trouble with type annotation)
+      // @phan-suppress-next-line PhanTypeMismatchProperty
+      $this->exceptableHandlers[$error] = [...($this->exceptableHandlers[$error] ?? []), $handler];
+    }
+
+    return $this;
+  }
+
+  /**
    * Adds an exception handler.
-   * @see <http://php.net/set_exception_handler> $exception_handler
    *
    * @param ExceptionHandler $handler The exception handler to add
    * @param string $catch Exception FQCN this handler should handle; defaults to any
@@ -262,9 +272,8 @@ class Handler implements LoggerAware {
    * Registers this handler and tries to invoke a callback, and then restores the previous handler(s).
    *
    * @param callable $callback The callback to run
-   * @throws RuntimeException ExceptableError::UncaughtException
-   *  if callback throws and no registered Handler handles it.
-   * @return mixed The value returned from the callback on success; null otherwise
+   * @throws RuntimeException ExceptableError::UncaughtException if callback throws and no registered Handler handles it.
+   * @return mixed The handled exception on failure; the value returned from the callback otherwise
    */
   public function try(callable $callback) {
     $registered = $this->registered;
@@ -282,7 +291,7 @@ class Handler implements LoggerAware {
       $this->unregister();
     }
 
-    return $value ?? null;
+    return $t ?? $value ?? null;
   }
 
   /**
