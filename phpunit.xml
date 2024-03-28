@@ -4,6 +4,9 @@
   bootstrap="./vendor/autoload.php"
   xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd"
   colors="true"
-  cacheDirectory=".phpunit.cache">
+  cacheDirectory=".phpunit.cache"
+  displayDetailsOnTestsThatTriggerErrors="true"
+  displayDetailsOnTestsThatTriggerWarnings="true"
+  displayDetailsOnTestsThatTriggerNotices="true">
 
 </phpunit>

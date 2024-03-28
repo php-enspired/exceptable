@@ -50,6 +50,8 @@ trait isError {
 
   /** @see MakeMessages::messageBundle() */
   public static function messageBundle() : ResourceBundle {
+    // @see Error::MESSAGES
+    // @phan-suppress-next-line PhanUndeclaredConstantOfClass
     return new MessageBundle([strtr(static::class, ["\\" => "_"]) => static::MESSAGES]);
   }
 
