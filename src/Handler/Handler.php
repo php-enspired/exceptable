@@ -25,6 +25,8 @@ use ErrorException,
   Throwable;
 
 use at\exceptable\ {
+  Error,
+  Exceptable,
   ExceptableError,
   Handler\ErrorHandler,
   Handler\ErrorLogEntry,
@@ -48,7 +50,7 @@ class Handler implements LoggerAware {
   /** @var ErrorHandler[][] Registered error handlers, grouped by error type(s) to handle. */
   protected array $errorHandlers = [];
 
-  /** @var ObjectStore<Error: ExceptionHandler[]> Registered exceptable handlers, grouped by Error case. */
+  /** @var ObjectStore{Error: ExceptionHandler[]} Registered exceptable handlers, grouped by Error case. */
   protected ObjectStore $exceptableHandlers;
 
   /** @var ExceptionHandler[][] Registered exception handlers, grouped by Throwable type and code to handle. */
@@ -121,7 +123,8 @@ class Handler implements LoggerAware {
 
     // error case
     $x = ($t instanceof Exceptable) ? $t : (ExceptableError::UncaughtException)([], $t);
-    foreach ($this->exceptionHandlers[Error::class] as $error => $handlers) {
+    foreach ($this->exceptableHandlers as $error => $handlers) {
+      assert($error instanceof Error);
       if ($x->has($error)) {
         foreach ($handlers as $handler) {
           if ($this->runExceptionHandler($handler, $t)) {
@@ -208,7 +211,7 @@ class Handler implements LoggerAware {
    * This is the same as onException(), but matches against Error cases.
    *
    * @param ExceptionHandler $handler The exception handler to add
-   * @param string ...$errors Error case(s) the handler should handle
+   * @param Error ...$errors Error case(s) the handler should handle
    * @return Handler $this
    */
   public function onExceptable(ExceptionHandler $handler, Error ...$errors) : Handler {
