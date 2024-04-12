@@ -146,18 +146,16 @@ class Handler implements LoggerAware {
     }
 
     // work up inheritance chain with catch-all code
-    if (! empty($this->exceptionHandlers[$type][0])) {
-      do {
-        foreach ($this->exceptionHandlers[$type][0] ?? [] as $handler) {
-          if ($this->runExceptionHandler($handler, $t)) {
-            $this->logException(true, $t);
-            return;
-          }
+    do {
+      foreach ($this->exceptionHandlers[$type][0] ?? [] as $handler) {
+        if ($this->runExceptionHandler($handler, $t)) {
+          $this->logException(true, $t);
+          return;
         }
+      }
 
-        $type = get_parent_class($type);
-      } while (! empty($type));
-    }
+      $type = get_parent_class($type);
+    } while (! empty($type));
 
     // try any lowest-level catch-all handlers
     if (! empty($this->exceptionHandlers[Throwable::class][0])) {
