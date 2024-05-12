@@ -104,7 +104,7 @@ trait isError {
     assert($this instanceof Error);
 
     $error = $this->errorName();
-    $message = $this->makeMessage(strtr($error, ["\\", "_"]), $context);
+    $message = $this->makeMessage($this->messageKey(), $context);
     return (empty($message) || $this->isDefaultFormat($message)) ?
       $error :
       "{$error}: {$message}";
@@ -117,6 +117,15 @@ trait isError {
     assert(is_a($x, Exceptable::class, true));
 
     return $this->adjustExceptable(new $x($this, $context, $previous), 0);
+  }
+
+  /**
+   * Gets the key to look up this Error's message.
+   *
+   * @return string A dot-delimited path to the Error's message.
+   */
+  protected function messageKey() : string {
+    return strtr($this->errorName(), ["\\", "_"]);
   }
 
   /**
