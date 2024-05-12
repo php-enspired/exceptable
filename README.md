@@ -17,7 +17,7 @@ ICU support requires the `intl` extension.
 installation
 ------------
 
-Recommended installation method is via [Composer](https://getcomposer.org/): simply `composer require php-enspired/exceptable ^5`.
+Recommended installation method is via [Composer](https://getcomposer.org/): simply `composer require "php-enspired/exceptable:^5"`.
 
 a quick taste
 -------------
