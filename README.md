@@ -3,9 +3,15 @@
 how exceptable!
 ===============
 
-_Exceptables_ make exceptions exceptional.  Exceptables provide some nice utility methods, but the main benefit is having a way to conveniently and quickly organize all the error cases in your application.
+A lot of php code treats exceptions in an ad-hoc way: throwing a plain `Exception` instance with a message written inline. Then, when (...if?) you look at your error log, you have to start working backwards to figure out the state of the application at that time.
 
-Exceptables are easy to create and pass details to, they provide access to error info for both humans and code, and make it easy to extend, add, and maintain error handling code as your application grows.
+_Exceptables_ make exceptions exceptional. Exceptables are:
+- ✓ easy to create and pass details to
+- ✓ are readable by both humans and your application code
+- ✓ can provide a wealth of runtime information about the state of things that led to the problem
+- ✓ make it easy to add, adapt, and maintain error handling code as your application grows
+
+More importantly, when throwing an Exceptable, you can include any additional information that might be helpful - values of arguments or local variables, details about state, whole objects, anything! This _context_ is good for adding details to the error message, but can also be sent to log aggregation tools, and even be used at runtime to inspect the error and recover or fail gracefully.
 
 dependencies
 ------------
@@ -17,7 +23,9 @@ ICU support requires the `intl` extension.
 installation
 ------------
 
-Recommended installation method is via [Composer](https://getcomposer.org/): simply `composer require php-enspired/exceptable ^5`.
+Recommended installation method is via [Composer](https://getcomposer.org/):
+
+simply `composer require "php-enspired/exceptable:^5"`
 
 a quick taste
 -------------
@@ -26,43 +34,40 @@ a quick taste
 
 use at\exceptable\ {
   Error,
-  Handler\ExceptionHandler,
-  Handler\Handler,
   IsError
 };
 
 // a simple Error, just for you
-enum FooError : int implements Error {
+enum ProcessError : int implements Error {
   use IsError;
 
-  case UnknownFoo = 1;
+  case NotReady = 1;
   public const MESSAGES = [
-    self::UnknownFoo->name => "i don't know who, you think is foo, but it's not {foo}"
+    self::NotReady->name => "{type} is not ready (status is '{status}')"
   ];
 }
 
-(FooError::UnknownFoo)(["foo" => "foobedobedoo"]);
-// on your screen:
-// Fatal error: Uncaught at\exceptable\Spl\RuntimeException: i don't know who, you think is foo, but it's not foobedobedoo
+class Example {
+  public function __construct( public string $status ) {}
+}
 
-$handler = new Handler();
-$handler->onException(new class() implements ExceptionHandler {
-    public function run(Throwable $t) {
-      error_log($t->getMessage());
-      return true;
-    }
-  });
-$handler->register();
-
-(FooError::UnknownFoo)(["foo" => "foobedobedoo"]);
-// in your error log:
-// i don't know who, you think is foo, but it's not foobedobedoo
+$example = new Example("preparing");
+if ($example->status !== "ready") {
+  throw (ProcessError::NotReady)([
+    "type" => $example::class,
+    "status" => $example->status
+  ]);
+}
 ```
+outputs:
+> Fatal error: Uncaught at\exceptable\Spl\RuntimeException: ProcessError.NotReady: Example is not ready (status is 'preparing')
 
 errors as values
 ----------------
 
-Having errors available to your application as normal values also makes _not_ throwing exceptions a viable solution. The _Result pattern_, for example, is a functional programming approach to error handling that treats error conditions as normal, expected return values. This can encourage you to consider how to handle error cases more carefully and closer to their source, as well as being a benefit to static analysis and comprehensibility in general. See [Larry Garfield's excellent article](https://peakd.com/hive-168588/@crell/much-ado-about-null) for more.
+Having errors available to your application as normal values also means you can decide to _not_ throw exceptions.
+
+The _Result pattern_, for example, is a functional programming approach to error handling that treats error conditions as normal, expected return values. This encourages handling error cases more carefully and closer to their source, and is also a benefit to static analysis. See [Larry Garfield's excellent article ("_A Naked Result_")](https://peakd.com/hive-168588/@crell/much-ado-about-null#anakedresult) for more.
 
 ```php
 <?php
@@ -132,14 +137,16 @@ Version 4.0
 docs
 ----
 
-- API:
-  - [The Exceptable Interface](https://github.com/php-enspired/exceptable/wiki/API:-The-Exceptable-Interface)
-  - [SPL Exception Classes](https://github.com/php-enspired/exceptable/wiki/API:-SPL-Exception-Classes)
-  - [The Handler Class](https://github.com/php-enspired/exceptable/wiki/API:-The-Handler-Class)
-- [Basic Exceptable Usage](https://github.com/php-enspired/exceptable/wiki/Usage:-Exceptables)
-- [Basic Handler Usage](https://github.com/php-enspired/exceptable/wiki/Usage:-Handlers)
-- [Localization and Message Formatting](https://github.com/php-enspired/exceptable/wiki/Usage:-ICU)
-- [SPL Exception Classes](https://github.com/php-enspired/exceptable/wiki/Usage:-SPL-Exception-Classes)
+### Usage
+- [Error enums](https://github.com/php-enspired/exceptable/wiki/Usage:-Error-enums)
+- [Exceptables](https://github.com/php-enspired/exceptable/wiki/Usage:-Exceptables)
+- [Spl Errors](https://github.com/php-enspired/exceptable/wiki/Usage:-SPL-Errors)
+- [Handlers](https://github.com/php-enspired/exceptable/wiki/Usage:-Handlers)
+- [Making and Testing Exceptables for Your Own Project (coming soon!)](#)
+### Api
+- [The `Error` Interface](https://github.com/php-enspired/exceptable/wiki/API:-The-Error-Interface)
+- [The `Exceptable` Interface](https://github.com/php-enspired/exceptable/wiki/API:-The-Exceptable-Interface)
+- [The `Handler` Class](https://github.com/php-enspired/exceptable/wiki/API:-The-Handler-Class)
 
 contributing or getting help
 ----------------------------
