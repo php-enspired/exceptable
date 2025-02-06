@@ -5,8 +5,8 @@ how exceptable!
 
 A lot of php code treats exceptions in an ad-hoc way: throwing a plain `Exception` instance with a message written inline. Then, when (...if?) you look at your error log, you have to start working backwards to figure out the state of the application at that time.
 
-_Exceptables_ make exceptions exceptional. Exceptables are:
-- ✓ easy to create and pass details to
+_Exceptables_ make exceptions exceptional. Exceptables:
+- ✓ are easy to create and pass details to
 - ✓ are readable by both humans and your application code
 - ✓ can provide a wealth of runtime information about the state of things that led to the problem
 - ✓ make it easy to add, adapt, and maintain error handling code as your application grows
