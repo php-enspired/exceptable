@@ -11,7 +11,7 @@ _Exceptables_ make exceptions exceptional. Exceptables:
 - ✓ can provide a wealth of runtime information about the state of things that led to the problem
 - ✓ make it easy to add, adapt, and maintain error handling code as your application grows
 
-More importantly, your Exceptables can include any additional information you want - values of arguments or local variables, details about state, whole objects, anything! This _context_ is good for adding details to the error message, but can also be sent to log aggregation tools, and even be used at runtime to inspect the error and recover or fail gracefully.
+More importantly, when throwing an Exceptable, you can include any additional information that might be helpful - values of arguments or local variables, details about state, whole objects, anything! This _context_ is good for adding details to the error message, but can also be sent to log aggregation tools, and even be used at runtime to inspect the error and recover or fail gracefully.
 
 dependencies
 ------------
