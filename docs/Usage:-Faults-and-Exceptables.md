@@ -1,3 +1,115 @@
+
+### your first fault
+
+There are two approaches to declaring your fault types: with a backed enum, or without. Using a backed enum allows you to declare simple error messages on the enum itself. Otherwise, it's expected that you provide error messages to the application via an ICU `ResourceBundle` (or, via an exceptable `MessageBundle`).
+
+Using bundles
+
+
+
+
+a quick taste
+-------------
+```php
+<?php
+use at\exceptable\ {
+  Fault,
+  EnumeratesFaults
+};
+
+// A simple Fault, just for you
+enum ProcessFault : string implements Fault {
+  use EnumeratesFaults;
+
+  case NotReady = "{type} is not ready (status is '{status}')";
+}
+
+class Example {
+  public function __construct( public ExampleStatus $status ) {}
+}
+enum ExampleStatus {
+  case Preparing;
+  case Ready;
+}
+
+$example = new Example(ExampleStatus::Preparing);
+if ($example->status !== ExampleStatus::Ready) {
+  throw (ProcessFault::NotReady)([
+    "type" => $example::class,
+    "status" => $example->status
+  ]);
+}
+```
+outputs:
+> Fatal error: Uncaught at\exceptable\Spl\RuntimeException: ProcessError.NotReady: Example is not ready (status is 'preparing')
+
+errors as values
+----------------
+
+Having errors available to your application as normal values also means you _don't have to_ throw exceptions.
+
+The idea of treating error conditions as normal, expected return values is gaining popularity. This approach encourages handling error cases more carefully and closer to their source and is also a benefit to static analysis. See [Larry Garfield's excellent article "_A Naked Result_"](https://peakd.com/hive-168588/@crell/much-ado-about-null#anakedresult) for more.
+
+```php
+<?php
+
+class Processor {
+
+  public function __construct(public Example $example) {}
+
+  public function process() : Outcome|ProcessFault {
+    if ($this->example->status !== ExampleStatus::Ready) {
+      return ProcessFault::NotReady;
+    }
+    return $this->outcome();
+  }
+
+  private function outcome() : Outcome {
+    . . .
+  }
+}
+
+class Outcome {
+
+  public function publish() {. . .}
+  . . .
+}
+$outcome = (new Processor($example))->process();
+if ($outcome instanceof ProcessFault) {
+  echo $outcome->message([
+    "type" => $processor->example::class,
+    "status" => $processor->example->status
+  ]);
+} else {
+  $outcome->publish();
+}
+```
+...and, of course, if you want to make _everybody_ mad you can still throw them.
+```php
+throw $outcome([
+  "type" => $processor->example::class,
+  "status" => $processor->example->status,
+  "yes" => "i know i'm horrible"
+]);
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 The `Exception` class provides a complete base implementation for the `Exceptable` interface.  Simply extend it, define your error codes and information, and you have a working implementation.
 
 ### your first exceptable

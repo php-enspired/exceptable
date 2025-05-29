@@ -2,13 +2,13 @@
   "name": "php-enspired/exceptable",
   "description": "Augmented features for exceptions and exception handling.",
   "type": "library",
-  "homepage": "http://php.enspi.red",
+  "homepage": "https://php.enspi.red",
   "license": "GPL-3.0-only",
   "authors": [
     {
       "name": "Adrian",
       "email": "adrian@enspi.red",
-      "homepage": "http://enspi.red"
+      "homepage": "https://enspi.red"
     }
   ],
   "support": {
@@ -18,20 +18,21 @@
     "source": "https://github.com/php-enspired/exceptable"
   },
   "require": {
-    "php": "^8.2",
-    "php-enspired/peekaboo": "^1"
+    "php": "^8.3",
+    "php-enspired/peekaboo": "^2",
+    "php-enspired/at_shared_exceptable": "^1"
   },
   "suggest": {
     "ext-intl": "support for localization and full ICU message formatting features"
   },
   "require-dev": {
-    "phan/phan": "^5.4.3",
-    "phpunit/phpunit": "^10"
+    "phan/phan": "^5.4.6",
+    "phpunit/phpunit": "^12"
   },
   "autoload": {
     "psr-4": {
       "at\\exceptable\\": "src/",
-      "at\\exceptable\\Tests\\": "tests/"
+      "at\\exceptable\\tests\\": "tests/"
     }
   },
   "scripts": {
