@@ -1,142 +1,89 @@
 `at\exceptable\Exceptable`
 ==========================
 
-An augmented interface for php exceptions.  `Exceptable` extends the `Throwable` interface with a severity rating, various utility methods, and a specialized (but backwards compatible) constructor.
+Interface for exceptional exceptions.
 
-static methods
---------------
-
-### Exceptable::getInfo()
-```
-public static array getInfo( int $code )
-```
-
-Gets information about an error case identified by the given code.
-
-parameters:
-- int **`$code`**
-  The exceptable code to look up
-
-**throws** `at\exceptable\ExceptableError` if the code is not known to the implementation.
-
-**returns** an array with info about the code, including (at a minimum) its `"code"` and `"message"`.
+properties
+----------
 
 ---
+### readonly array `Exceptable::context`
 
-### Exceptable::hasInfo()
-```
-public static bool hasInfo( int $code )
-```
+User-provided contextual information for this exception.
 
-Checks whether there is an error case associated with the given code.
+This may be replacement values for error message formatting, information you want to be logged, or additional data/structures to be available to your code (e.g., for error handling). Any data types are permitted, and most will be meaningfully converted to string for message formatting. Values are not _required_ to be serializable, but this is probably a good idea.
 
-parameters:
-- int **`$code`**
-  The exceptable code to look up
+Key names starting with a double underscore (`__`) are reserved for internal use; your keys with this prefix may be overwritten/lost. The following values will be added to your Exceptable context automatically:
+- Throwable   `__exception__`: the current exception.
+- ? Throwable `__previous__`:  the previous exception, if any.
+- Throwable   `__root__`:      the original (most-previous) exception in this exception chain. This may be the same as `__exception__` or `__previous__`.
 
-**returns** true if the code identifies a known error case; false otherwise.
-
----
-
-### Exceptable::is()
-```
-public static bool is( Throwable $e, int $code )
-```
-
-Checks whether the given exception matches the given Exceptable code.
-
-parameters:
-- Throwable **`$e`**
-  The exception to check
-- int **`$code`**
-  The exceptable code to compare to
-
-**returns** true if the given throwable is an instance of the Exceptable class and has the same code; false otherwise.
+For each of these, the following are also available for message formatting:
+- string  `__{exception}Message__`: the exception/previous/root error message.
+- int     `__{exception}Code__`:    the exception/previous/root error code.
+- string  `__{exception}File__`:    the file in which the exception/previous/root occured.
+- int     `__{exception}Line__`:    the line on which the exception/previous/root occured.
+- ? Fault `__{exception}Fault__`:   the fault that the exception/previous/root was built from, if any.
 
 ---
+### readonly Fault `Exceptable::fault`
 
-### Exceptable::create()
-```
-public static Exceptable create( int $code [, array $context = [] [, Throwable $previous]] )
-```
-
-Factory method: constructs a new Exceptable from the given arguments.
-
-parameters:
-- int **`$code`**
-  The Exceptable code.
-- array **`$context`**
-  Contextual information about the Exceptable.  Typically, used to provide details for the Exceptable message, but may include any information that should be available later (e.g., to loggers).
-- Throwable **`$previous`**
-  The previous Exception, if any.
-
-**throws** `at\exceptable\ExceptableError` if the given code is invalid.
-
-**returns** a new Exceptable instance on success.
+The Fault instance that this Exceptable was build from.
 
 ---
+### readonly ? Throwable `Exceptable::previous`
 
-### Exceptable::throw()
-```
-public static void throw( int $code [, array $context = [] [, Throwable $previous]] )
-```
-
-Utility method: constructs and then throws a new Exceptable from the given arguments.
-
-parameters:
-- int **`$code`**
-  The Exceptable code.
-- array **`$context`**
-  Contextual information about the Exceptable.  Typically, used to provide details for the Exceptable message, but may include any information that should be available later (e.g., to loggers).
-- Throwable **`$previous`**
-  The previous Exception, if any.
-
-**throws** `at\exceptable\Exceptable` on success.
-
-**throws** `at\exceptable\ExceptableError` if the given code is invalid.
+The previous exception, if any.
 
 ---
+### readonly Throwable `Exceptable::root`
 
-instance methods
-----------------
+The original (most-previous) exception in this exception's chain. This may be the same as the top-level or previous exception.
 
-### Exceptable::__construct()
-```
-public __construct( int $code [, array $context = [] [, Throwable $previous]] )
-```
-
-The exceptable constructor.
-
-Constructor arguments are `$code`, `$previous`, and an additional argument `$context` which accepts an array of values you provide (typically, details for the exception message). Note there is no `$message` argument; the exceptable message is generated based on the provided code.
-
-parameters:
-- int **`$code`**
-  The Exceptable code.
-- array **`$context`**
-  Contextual information about the Exceptable.  Typically, used to provide details for the Exceptable message, but may include any information that should be available later (e.g., to loggers).
-- Throwable **`$previous`**
-  The previous Exception, if any.
-
-**throws** `at\exceptable\ExceptableError` if the given code is invalid.
+methods
+-------
 
 ---
+### `Exceptable::__construct(Fault $fault [, array $context] [, Throwable $previous])`
 
-### Exceptable::getContext()
-```
-public array getContext( void )
-```
-Gets contextual information about this Exceptable.  Info will vary depending on what information is provided at runtime.  At a minimum, will include "`__rootMessage__`" (which will be the same as the top-level message if no previous exception exists).
+Constructs a new Exceptable instance from a Fault.
 
-**returns** an array of contextual information about the Exceptable.
-
----
-
-### Exceptable::getRoot()
-```
-public Throwable getRoot( void )
-```
-Traverses the chain of previous exception(s) and gets the root exception.
-
-**returns** the root exception (which will be the Exceptable instance if no previous exception exists).
+#### parameters
+- at\exceptable\Fault `$fault`    The Fault to build from.
+- array               `$context`  User-provided contextual information.
+- Throwable           `$previous` The previous exception, if any.
 
 ---
+### bool `Exceptable::has(Fault $fault)`
+
+Checks whether this Exceptable contains the given Fault, anywhere in its exception chain.
+
+#### parameters
+- at\exceptable\Fault `$fault`  The Fault to check for.
+
+#### returns
+- boolean
+
+---
+### bool `Exceptable::is(Fault $fault)`
+
+Checks whether this Exceptable was built from the given Fault.
+
+#### parameters
+- at\exceptable\Fault `$fault`  The Fault to check for.
+
+#### returns
+- boolean
+
+inherited methods
+-----------------
+
+Inherited from [Throwable](https://php.net/throwable):
+- string      `getMessage()`
+- int         `getCode()`
+- string      `getFile()`
+- int         `getLine()`
+- array       `getTrace()`
+- string      `getTraceAsString()`
+- ? Throwable `getPrevious()`
+- string      `__toString()`
