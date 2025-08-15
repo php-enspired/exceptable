@@ -99,6 +99,13 @@ docs
 - [The `ExceptableFault` Class](https://github.com/php-enspired/exceptable/wiki/API:-The-ExceptableFault-Class)
 - [The `Handler` Class](https://github.com/php-enspired/exceptable/wiki/API:-The-Handler-Class)
 
+tests
+-----
+
+You can run unit tests with `composer test:unit` and static analysis with `composer test:analyze`.
+
+Note, the first time you run a `test:` command, dev dependencies will be installed automatically. This requires an internet connection and may take some time.
+
 contributing or getting help
 ----------------------------
 
