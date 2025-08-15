@@ -65,13 +65,13 @@ echo ProcessFault::NotReady->message($context);
 // prints:
 //  ProcessFault.NotReady: Example is not ready (status is 'preparing')
 ```
-_Note, using `EnumeratesFaults` means the fault will_ never _try to look up messages on your registered message bundles. The `makeMessage()` method is still available, and_ will _look up messages if they are registered, but is not used internally._
+> Note, using `EnumeratesFaults` means the fault will _never_ try to look up messages on your registered message bundles. The `makeMessage()` method is still available, and _will_ look up messages if they are registered, but is not used internally.
 
 ### customized behavior
 
 Sensible default behavior is provided by `IsFault` and `EnumeratesFaults`, but there are some aspects that can be customized.
 
-> Note: During development, it is _highly_ recommended that you enable assertion checking. The exceptable library uses assertions to sanity-check your modifications - for example, that `exceptableType()` returns a suitable classname. In production, assertions can be safely disabled (and generally, should).
+> Note, During development, it is _highly_ recommended that you enable assertion checking. The exceptable library uses assertions to sanity-check your modifications - for example, that `exceptableType()` returns a suitable classname. In production, assertions can be safely disabled (and generally, should).
 
 #### changing what `Exceptable` type is thrown
 
