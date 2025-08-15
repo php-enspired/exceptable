@@ -1,131 +1,203 @@
-`at\exceptable\Handler`
-=======================
+`at\exceptable\Handler\Handler`
+===============================
 
-Manages a registry of callback functions ("handlers") for errors, uncaught exceptions, and shutdown.
+For building composable and reusable error handling strategies.
 
-instance methods
-----------------
-
-### Handler::during()
-```
-public mixed during( callable $callback [, mixed ...$arguments] )
-``` 
-Registers this handler to invoke a callback, and then restores the previous handler(s).
-
-parameters:  
-
-- callable **`$callback`**  
-  The callback to invoke.
-- mixed **`...$arguments`**  
-  Argument(s) to pass to the callback.
-
-**returns** the value returned from the callback.
+properties
+----------
 
 ---
+### readonly DebugLog `$debugLog`
 
-### Handler::onError()
-```
-public Handler onError( callable $handler [, int $types] )
-```
+A log of debugging messages provided to this Handler.
 
-Adds an error handler.  
-
-parameters: 
-- callable **`$handler`**  
-  The handler to add.  Must be suitable for use with [`set_error_handler`](http://php.net/set_error_handler).  If the handler returns `true`, then handling will stop (subsequently registered handlers will not be invoked).
-- int **`$types`**  
-  The error types the handler should be invoked for (a bitmask of `E_*` constants).  Defaults to "any error type."
-
-**returns** the Handler instance.
+methods
+-------
 
 ---
+### `__construct([HandlerOptions $options])`
 
-### Handler::onException()
-```
-public Handler onException( callable $handler [, int $types] )
-```  
+Constructor.
 
-Adds a handler for uncaught exceptions.  
-
-parameters: 
-- callable **`$handler`**  
-  The handler to add.  Must be suitable for use with [`set_exception_handler`](http://php.net/set_exception_handler).  If the handler returns `true`, then handling will stop (subsequently registered handlers will not be invoked).
-- int **`$severity`**  
-  The exception severities the handler should be invoked for (a bitmask of `Exceptable` severity constants).  Defaults to "any severity."
-
-**returns** the Handler instance.
-
----
-
-### Handler::onShutdown()
-```
-public Handler onShutdown( callable $handler [, ...$arguments] )
-```  
-
-Adds a shutdown handler.  
-
-_Note_, shutdown handlers should not be registered to handle fatal errors.  If the shutdown is due to a fatal error, the appropriate registered error handlers will be invoked.
-
-parameters: 
-- callable **`$handler`**  
-  The handler to add.  Must be suitable for use with [`register_shutdown_function`](http://php.net/register_shutdown_function).
-- mixed **`$arguments`**  
-  Argument(s) to pass to the handler on shutdown.
-
-**returns** the Handler instance.
+#### parameters
+- HandlerOptions `$options`: Configuration options for this Handler.
+  - bool `$debug`:
+  Enable debug mode? Defaults to `false`.
+  - ? Psr\Log\LoggerInterface `$logger`:
+  Optional logger instance to send log messages to.
+  - bool `$scream`:
+  Ignore the error control operator? Defaults to `false`.
+  - int `$throwErrorExceptions`:
+  Php error types which should be thrown as ErrorExceptions. This is a disjunction of `E_*` constants; you can use `-1` to throw all error types or `0` to throw none. Defaults to `0`.
+  - int `$returnErrors`:
+  Php error types which should be returned as Faults. This is a disjunction of `E_*` constants; you can use `-1` to throw all error types or `0` to throw none. Defaults to `0`.
 
 ---
+### Closure `bind(callable $if)`
 
-### Handler::register()
-```
-public Handler register( void )
-```  
+Binds a callback to this Handler's registered error strategies.
 
-Starts the Handler (makes its registered handlers "active").
+Bound callables are intended for use with `Handler->tryPipe()` (or, in php 8.5+, with the `|>` operator). The callback is invoked only if the input value is not a Fault; otherise, the Fault is returned.
 
-**returns** the Handler instance.
+#### parameters
+- callable `$if`:  The callback to invoke _if_ the input value is not a Fault. The callback must accept a single argument, and is expected to return a Fault on failure or any other value on success.
 
----
-
-### Handler::throw()
-```
-public Handler throw( [int $types] )
-```  
-
-Sets error types which should be intercepted and thrown as ErrorExceptions.
-
-parameters:  
-- int **`$types`**  
-  The error types to be thrown.  Defaults to `E_ERROR|E_WARNING`; use `0` to stop throwing.
-
-**returns** the Handler instance.
+#### returns
+- Closure:  The callback, as a Closure.
 
 ---
+### Handler `collect(Fault $as, Fault|string ...$errorCases)`
 
-### Handler::unregister()
-```
-public Handler unregister( void )
-```  
+Specifies error cases to be collected and returned as the given Fault.
 
-Stops the Handler (makes its registered handlers "inactive").  
+#### parameters
+- Fault `$as`: The Fault to collect error cases as.
+- Fault|string `...$errorCases`: The Faults and/or fully qualified Throwable classnames to collect.
 
-**returns** the Handler instance.
-
----
-
-### Handler::try()
-```
-public mixed try( callable $callback [, mixed ...$arguments] )
-``` 
-Tries invoking a callback, using the registered exception handler(s) to handle any uncaught exceptions.
-
-parameters:  
-
-- callable **`$callback`**  
-  The callback to invoke.
-- mixed **`...$arguments`**  
-  Argument(s) to pass to the callback.
-
-**returns** the value returned from the callback.
+#### returns
+- Handler: a new handler instance.
 
 ---
+### Handler `default(mixed $to, Fault|string|null ...$errorCases)`
+
+Specifies a default value to be returned in place of the given error cases.
+
+#### parameters
+- mixed `$to`: The default value to return.
+- Fault|string|null `...$errorCases`: The Faults and/or fully qualified Throwable classnames to default from. Omit (or pass `null`) to specify a default for a nullable or void return.
+
+#### returns
+- Handler: a new handler instance.
+
+---
+### Handler `ignore(Fault|string ...$errorCases)`
+
+Specifies error cases this Handler should ignore and returned as null.
+
+#### parameters
+- Fault|string `...$errorCases`: The Faults and/or fully qualified Throwable classnames to ignore.
+
+#### returns
+- Handler: a new handler instance.
+
+---
+### void `logIf(Stringable|HasMessages|array|string|null $message [, array $context])`
+
+Logs a fault or exception to this handler, or any message in debug mode.
+
+If a PSR logger instance was configured, the message will also be logged there.
+
+#### parameters
+- Stringable|HasMessages|array|string|null $message
+- array`$context`: User-provided contextual information.
+
+#### returns
+- Handler: a new handler instance.
+
+---
+### Handler `onFailure(callable $failure)`
+
+Specifies a callback for processing return values on failure.
+
+#### parameters
+- callable `$failure`: The callback to invoke on failure. The callback must accept a single argument, the Fault. Its return value is returned by the Handler.
+
+#### returns
+- Handler: a new handler instance.
+
+---
+### Handler `onSuccess(callable $success)`
+
+Specifies a callback for processing return values on success.
+
+#### parameters
+- callable `$failure`: The callback to invoke on failure. The callback must accept a single argument. Its return value is returned by the Handler.
+
+#### returns
+- Handler: a new handler instance.
+
+---
+### Handler `options(Options $options)`
+
+Specifies new Handler Options.
+
+#### parameters
+- at\exceptable\Handler\Options `$options`: New options. These will be merged with existing options.
+
+#### returns
+- Handler: a new handler instance.
+
+---
+### Handler `retry(int $attempts, Fault|string ...$errorCases)`
+
+Specifies the number of times processing should be retried on the given error cases.
+
+#### parameters
+- int `$attempts`: Number of retries to attempt.
+- Fault|string `...$errorCases`: The Faults and/or fully qualified Throwable classnames to retry.
+
+#### returns
+- Handler: a new handler instance.
+
+---
+### Handler `throw(Fault|string ...$errorCases)`
+
+Specifies error cases this Handler should (re)throw without modification.
+
+#### parameters
+- Fault|string `...$errorCases`: The Faults and/or fully qualified Throwable classnames to throw.
+
+#### returns
+- Handler: a new handler instance.
+
+---
+### mixed|Fault `try(callable $callback, mixed ...$args)`
+
+Invokes the given callable using any registered error strategies.
+
+#### parameters
+- callable `$callback`: The callback to invoke.
+- mixed `...$args`: Argument(s) to pass to the callback.
+
+#### throws
+- Throwable: as configured.
+
+#### returns
+- mixed: The callback's return value, on success.
+- Fault: On failure.
+
+---
+### mixed|null `tryIgnoring(callable $callback, mixed ...$args)`
+
+Invokes the given callable using any registered error strategies, ignoring any failures.
+
+#### parameters
+- callable `$callback`: The callback to invoke.
+- mixed `...$args`: Argument(s) to pass to the callback.
+
+#### throws
+- Throwable: as configured.
+
+#### returns
+- mixed: The callback's return value, on success.
+- null: On failure.
+
+---
+### mixed|Fault `tryPipe(mixed $initial, callable ...$functions)`
+
+Invokes the given callables in turn, passing the return value of each as the argument for the next.
+
+If a Fault is encountered, the process is aborted.
+
+If desired, individual callable steps can be bound to specific Handlers via `Handler->bind()`. The process as a whole is wrapped with this Handler's registered error strategies.
+
+#### parameters
+- mixed `$initial`: The initial value to pass to the first function in the chain.
+- callable `...$callback`: The callbacks to invoke, in order. Each must accept a single mixed argument, and is expected to return mixed on success and a Fault on failure.
+
+#### throws
+- Throwable: as configured.
+
+#### returns
+- mixed: The callback's return value, on success.
+- Fault: On failure.
