@@ -24,9 +24,14 @@ enum ProcessFault implements Fault {
 
 Seriously? Yes, seriously, that's it. If you want to skip to the end now you can. Go ahead and start writing your application code, returning and/or throwing these faults.
 
+### error messages
+
 You can build messages for your faults using the intl extension and ICU resource bundles. If you don't, then the error message will just be the name of the fault.
 
 ```php
+<?php
+use at\peekaboo\MessageRegistry;
+
 $context = [
   "type" => "Example",
   "status" => "preparing"
@@ -66,7 +71,7 @@ _Note, using `EnumeratesFaults` means the fault will_ never _try to look up mess
 
 Sensible default behavior is provided by `IsFault` and `EnumeratesFaults`, but there are some aspects that can be customized.
 
-During development, it is _highly_ recommended that you enable assertion checking. The exceptable library uses assertions to sanity-check your modifications - for example, that `exceptableType()` returns a suitable classname. In production, assertions can be safely disabled (and generally, should).
+> Note: During development, it is _highly_ recommended that you enable assertion checking. The exceptable library uses assertions to sanity-check your modifications - for example, that `exceptableType()` returns a suitable classname. In production, assertions can be safely disabled (and generally, should).
 
 #### changing what `Exceptable` type is thrown
 
