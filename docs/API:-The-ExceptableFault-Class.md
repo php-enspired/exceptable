@@ -49,6 +49,7 @@ An error occured but its details are not available.
 exceptables
 -----------
 
+---
 - `LogicException`: thrown for `UnknwonFault`, `UnacceptableFault`
 - `RuntimeException`: thrown for `UncaughtException`
 - `InvalidArgumentException`: thrown for `UnacceptableLogMessage`, `UnknownError`

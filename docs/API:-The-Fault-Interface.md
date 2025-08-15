@@ -57,5 +57,6 @@ Builds an Exceptable from this Fault, using the provided contextual information 
 inherited methods
 -----------------
 
+---
 Inherited from [`JsonSerializable`](https://php.net/JsonSerializable):
 - mixed `jsonSerialize()`

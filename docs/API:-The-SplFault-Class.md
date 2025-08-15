@@ -75,6 +75,7 @@ A value does not match with a set of values.
 exceptables
 -----------
 
+---
 Corresponding Exceptable classes are provided for each SplFault case. Each also extends from the core SPL exception class of the same name, sharing semantic meaning and allowing interoperability with code that is unaware of the exceptable types.
 
 - `at\exceptable\Spl\BadFunctionCallException` extends `BadFunctionCallException`

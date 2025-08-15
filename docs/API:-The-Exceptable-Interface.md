@@ -7,7 +7,7 @@ properties
 ----------
 
 ---
-### readonly array `Exceptable::context`
+### readonly array `$context`
 
 User-provided contextual information for this exception.
 
@@ -26,17 +26,17 @@ For each of these, the following are also available for message formatting:
 - ? Fault `__{exception}Fault__`:   the fault that the exception/previous/root was built from, if any.
 
 ---
-### readonly Fault `Exceptable::fault`
+### readonly Fault `$fault`
 
 The Fault instance that this Exceptable was build from.
 
 ---
-### readonly ? Throwable `Exceptable::previous`
+### readonly ? Throwable `$previous`
 
 The previous exception, if any.
 
 ---
-### readonly Throwable `Exceptable::root`
+### readonly Throwable `$root`
 
 The original (most-previous) exception in this exception's chain. This may be the same as the top-level or previous exception.
 
@@ -44,7 +44,7 @@ methods
 -------
 
 ---
-### `Exceptable::__construct(Fault $fault [, array $context] [, Throwable $previous])`
+### `__construct(Fault $fault [, array $context] [, Throwable $previous])`
 
 Constructs a new Exceptable instance from a Fault.
 
@@ -54,7 +54,7 @@ Constructs a new Exceptable instance from a Fault.
 - Throwable           `$previous` The previous exception, if any.
 
 ---
-### bool `Exceptable::has(Fault $fault)`
+### bool `has(Fault $fault)`
 
 Checks whether this Exceptable contains the given Fault, anywhere in its exception chain.
 
@@ -65,7 +65,7 @@ Checks whether this Exceptable contains the given Fault, anywhere in its excepti
 - boolean
 
 ---
-### bool `Exceptable::is(Fault $fault)`
+### bool `is(Fault $fault)`
 
 Checks whether this Exceptable was built from the given Fault.
 
@@ -78,6 +78,7 @@ Checks whether this Exceptable was built from the given Fault.
 inherited methods
 -----------------
 
+---
 Inherited from [Throwable](https://php.net/throwable):
 - string      `getMessage()`
 - int         `getCode()`
