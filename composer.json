@@ -19,8 +19,8 @@
   },
   "require": {
     "php": "^8.3",
-    "php-enspired/peekaboo": "^2",
-    "php-enspired/at_shared_exceptable": "^1"
+    "php-enspired/peekaboo": "2.0",
+    "php-enspired/at_shared_exceptable": "1.0"
   },
   "suggest": {
     "ext-intl": "support for localization and full ICU message formatting features"
@@ -29,18 +29,10 @@
     "phan/phan": "^5.4.6",
     "phpunit/phpunit": "^12"
   },
-  "autoload": {
-    "psr-4": {
-      "at\\exceptable\\": "src/",
-      "at\\exceptable\\tests\\": "tests/"
-    }
-  },
+
   "scripts": {
-    "build:dist": "bin/build-dist",
-    "build:locales": "genrb resources/language/*.txt -d resources/language/",
-    "build:test": "bin/build-test",
-    "test:analyze": "vendor/bin/phan",
-    "test:unit" : "vendor/bin/phpunit tests",
+    "test:analyze": "composer -q --working-dir vendor/php-enspired/at_shared_exceptable install && composer --working-dir vendor/php-enspired/at_shared_exceptable test:analyze",
+    "test:unit": "composer -q --working-dir vendor/php-enspired/at_shared_exceptable install && composer --working-dir vendor/php-enspired/at_shared_exceptable exceptable:test:unit",
     "wiki:update": "git subtree push --prefix docs wiki master",
     "wiki:update-docs": "git subtree pull --prefix docs wiki master --squash --message='Merge wiki updates into docs'"
   }

@@ -35,7 +35,7 @@ Gets a unique name for this Fault, in the form `{fully qualified classname}.{fau
 The error message for this Fault, using the given context if applicable.
 
 #### parameters
-- array               `$context`  User-provided contextual information.
+- array `$context`  User-provided contextual information.
 
 #### returns
 - string
@@ -48,8 +48,14 @@ The error message for this Fault, using the given context if applicable.
 Builds an Exceptable from this Fault, using the provided contextual information and previous exception.
 
 #### parameters
-- array               `$context`  User-provided contextual information.
-- Throwable           `$previous` The previous exception, if any.
+- array     `$context`  User-provided contextual information.
+- Throwable `$previous` The previous exception, if any.
 
 #### returns
 - Exceptable
+
+inherited methods
+-----------------
+
+Inherited from [`JsonSerializable`](https://php.net/JsonSerializable):
+- mixed `jsonSerialize()`
