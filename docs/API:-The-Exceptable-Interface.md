@@ -78,6 +78,7 @@ Checks whether this Exceptable was built from the given Fault.
 inherited methods
 -----------------
 
+---
 Inherited from [Throwable](https://php.net/throwable):
 - string      `getMessage()`
 - int         `getCode()`
